@@ -102,21 +102,17 @@
     color: #000;
   }
 
-  /* Banner de aviso de login */
-  .login-banner {
-    background: rgba(255, 152, 0, 0.15);
-    border-left: 4px solid #ff9800;
-    padding: 1rem;
-    border-radius: 6px;
+  /* Banner de aviso de login (eliminado) */
+  /* .login-banner { ... } */
+
+  /* Footer de autor */
+  .author-footer {
     text-align: center;
-    margin-bottom: 1.5rem;
-  }
-  .login-banner small {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.95rem;
-    color: #333;
+    color: #ffffff;
+    font-size: 0.8rem;
+    background: rgba(0,0,0,0.5);
+    padding: 20px;
+    margin-top: auto; /* empuja al final si el contenedor es flex column */
   }
 
   /* Responsivo */
@@ -130,7 +126,7 @@
   }
 </style>
 
-<div class="menu-wrapper min-vh-100">
+<div class="menu-wrapper min-vh-100 d-flex flex-column">
 
   <!-- Barra de navegación | Navigation bar -->
   <nav class="navbar-menu d-flex justify-content-between align-items-center">
@@ -154,7 +150,7 @@
     </div>
   </nav>
 
-  <main class="container mt-4">
+  <main class="container mt-4 flex-grow-1">
     <!-- Mensaje de éxito | Success message -->
     @if (mensajeExito()) {
       <div class="alert alert-success text-center mb-4" role="status">
@@ -166,11 +162,7 @@
     <div class="menu-header text-center mb-5">
       <h1 class="menu-title">Nuestro Menú</h1>
       <p class="menu-subtitle">Selecciona tu pizza favorita y agrégala al carrito</p>
-      @if (!estaAutenticado()) {
-        <div class="login-banner" role="alert">
-          <small>🔒 Inicia sesión para agregar pizzas al carrito</small>
-        </div>
-      }
+      <!-- Aviso de login eliminado -->
     </div>
 
     <!-- Estado de carga | Loading state -->
@@ -236,9 +228,9 @@
     }
   </main>
 
-  <footer class="menu-footer text-center">
-    <p class="mb-1">Pizzería Core © 2026</p>
-    <small class="text-muted">Las mejores pizzas de la ciudad</small>
+  <!-- Footer de autor -->
+  <footer class="author-footer">
+    © 2026 by Camilo Martinez Galarza | Desarrollador Fullstack Apoyado en IA
   </footer>
 
 </div>
