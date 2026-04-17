@@ -86,6 +86,6 @@ export class AuthService {
   // Verifica si el usuario actual tiene rol de administrador
   isAdmin(): boolean {
     const usuario = this.obtenerUsuarioActual();
-    return usuario && usuario.rol === 'admin';
+    return !!(usuario && usuario.rol === 'admin');
   }
 }
