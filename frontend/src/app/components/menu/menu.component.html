@@ -1,6 +1,121 @@
 <!-- Menú público de pizzas | Public pizza menu -->
 <!-- Autor: Camilo Martinez | Fecha: 15/04/2026 -->
 
+<style>
+  /* Fondo oscuro con contraste para las tarjetas */
+  .pizza-card {
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%; /* para que las tarjetas tengan igual altura en la fila */
+    display: flex;
+    flex-direction: column;
+  }
+  .pizza-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  }
+  .pizza-card-header,
+  .pizza-card-body {
+    padding: 1.5rem;
+  }
+  .pizza-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Texto de nombre y descripción */
+  .pizza-nombre {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.4rem;
+  }
+  .pizza-descripcion {
+    margin: 0 0 1rem 0;
+    flex-grow: 1;
+    opacity: 0.9;
+  }
+
+  /* Selector de tamaños */
+  .tamanos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .tamano-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .tamano-info {
+    display: flex;
+    flex-direction: column;
+  }
+  .tamano-nombre {
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+  .tamano-precio {
+    font-weight: bold;
+    font-size: 1.2rem; /* aumento de tamaño de fuente para precios */
+  }
+
+  /* Botones de acción */
+  .btn-agregar {
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s, opacity 0.2s;
+  }
+  .btn-agregar:not(:disabled):hover {
+    opacity: 0.9;
+  }
+  .btn-agregar:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  /* Estilo específico para el botón de login cuando no hay sesión */
+  .btn-login {
+    background-color: #ff9800 !important;
+    color: #000 !important;
+  }
+  .btn-login:hover {
+    background-color: #fb8c00 !important;
+  }
+
+  /* Banner de aviso de login */
+  .login-banner {
+    background: rgba(255, 152, 0, 0.15);
+    border-left: 4px solid #ff9800;
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .login-banner small {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: #333;
+  }
+
+  /* Responsivo */
+  @media (min-width: 768px) {
+    .pizza-card-body {
+      padding: 2rem;
+    }
+    .tamano-precio {
+      font-size: 1.3rem;
+    }
+  }
+</style>
+
 <div class="menu-wrapper min-vh-100">
 
   <!-- Barra de navegación | Navigation bar -->
@@ -38,9 +153,9 @@
       <h1 class="menu-title">Nuestro Menú</h1>
       <p class="menu-subtitle">Selecciona tu pizza favorita y agrégala al carrito</p>
       @if (!estaAutenticado()) {
-        <p class="login-prompt">
-          <small class="text-muted">🔒 Inicia sesión para agregar pizzas al carrito</small>
-        </p>
+        <div class="login-banner" role="alert">
+          <small>🔒 Inicia sesión para agregar pizzas al carrito</small>
+        </div>
       }
     </div>
 
@@ -86,8 +201,8 @@
                       </div>
                       <button
                         class="btn-agregar"
+                        [class.btn-login]="!estaAutenticado()"
                         [disabled]="!estaAutenticado()"
-                        [class.opacity-50]="!estaAutenticado()"
                         (click)="agregarAlCarrito(pizza, i)"
                         title="{{ estaAutenticado() ? 'Agregar al carrito' : 'Inicia sesión para agregar' }}">
                         @if (estaAutenticado()) {
