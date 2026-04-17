@@ -101,6 +101,32 @@
     background: white;
     color: #000;
   }
+  /* Botones de admin */
+  .btn-edit, .btn-delete {
+    width: 48%;
+    padding: 0.4rem 0.6rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color 0.2s, opacity 0.2s;
+    margin-top: 0.2rem;
+  }
+  .btn-edit {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+  .btn-edit:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  .btn-delete {
+    background: rgba(255,82,82,0.2);
+    color: #fff;
+  }
+  .btn-delete:hover {
+    background: rgba(255,82,82,0.3);
+  }
 
   /* Banner de aviso de login (eliminado) */
   /* .login-banner { ... } */
@@ -205,18 +231,23 @@
                         <span class="tamano-nombre text-white">{{ variante.tamano }}</span>
                         <span class="tamano-precio fw-bold text-white">${{ variante.precio | number:'1.2-2' }}</span>
                       </div>
-                      <button
-                        class="btn-agregar"
-                        [class.btn-login]="!estaAutenticado()"
-                        [disabled]="!estaAutenticado()"
-                        (click)="agregarAlCarrito(pizza, i)"
-                        title="{{ estaAutenticado() ? 'Agregar al carrito' : 'Inicia sesión para agregar' }}">
-                        @if (estaAutenticado()) {
-                          <span>🛒</span> Agregar
-                        } @else {
-                          <span>🔐</span> Login
-                        }
-                      </button>
+                      @if (esAdmin()) {
+                        <button class="btn-edit" (click)="editarPizza(pizza.id)">✏️ Editar</button>
+                        <button class="btn-delete" (click)="eliminarPizza(pizza.id)">🗑️ Eliminar</button>
+                      } @else {
+                        <button
+                          class="btn-agregar"
+                          [class.btn-login]="!estaAutenticado()"
+                          [disabled]="!estaAutenticado()"
+                          (click)="agregarAlCarrito(pizza, i)"
+                          title="{{ estaAutenticado() ? 'Agregar al carrito' : 'Inicia sesión para agregar' }}">
+                          @if (estaAutenticado()) {
+                            <span>🛒</span> Agregar
+                          } @else {
+                            <span>🔐</span> Login
+                          }
+                        </button>
+                      }
                     </div>
                   }
                 </div>

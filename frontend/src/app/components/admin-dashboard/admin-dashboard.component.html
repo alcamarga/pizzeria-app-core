@@ -1,0 +1,22 @@
+<div class="dashboard-container">
+  <h1>Panel de Administrador</h1>
+  <div class="cards">
+    <div class="card">
+      <h2>Ventas del Día</h2>
+      <p class="value">${{ ventasDelDia }}</p>
+    </div>
+    <div class="card">
+      <h2>Pedidos Pendientes</h2>
+      <p class="value">{{ pedidosPendientes }}</p>
+    </div>
+    <div class="card">
+      <h2>Inventario de Pizzas</h2>
+      <p class="value">{{ inventarioPizzas }} unidades</p>
+    </div>
+  </div>
+  <div class="placeholder">
+    <h2>Gráficas de Ventas</h2>
+    <p>Aquí se mostrarán gráficas de las pizzas más vendidas.</p>
+    <div class="chart-placeholder"></div>
+  </div>
+</div>
