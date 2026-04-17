@@ -18,7 +18,7 @@
           <span>🚪</span>
         </button>
       } @else {
-        <button class="btn-login-nav custom-login-btn" (click)="irALogin()">
+        <button class="btn btn-outline-light btn-lg ms-2" (click)="irALogin()">
           <span>🔐</span> Iniciar Sesión
         </button>
       }
@@ -66,12 +66,12 @@
       </div>
     } @else {
       <!-- Grid de pizzas | Pizza grid -->
-      <div class="pizza-grid row g-4">
+      <div class="pizza-grid row g-4 justify-content-center">
         @for (pizza of pizzas(); track pizza.id) {
           <div class="col-md-6 col-lg-4">
             <div class="pizza-card">
               <div class="pizza-card-header">
-                <h3 class="pizza-nombre">{{ pizza.nombre }}</h3>
+                <h3 class="pizza-nombre text-white">{{ pizza.nombre }}</h3>
               </div>
               <div class="pizza-card-body">
                 <p class="pizza-descripcion">{{ pizza.descripcion }}</p>
@@ -81,13 +81,14 @@
                   @for (variante of pizza.variantes; track variante.tamano; let i = $index) {
                     <div class="tamano-item">
                       <div class="tamano-info">
-                        <span class="tamano-nombre">{{ variante.tamano }}</span>
-                        <span class="tamano-precio">${{ variante.precio | number:'1.2-2' }}</span>
+                        <span class="tamano-nombre text-white">{{ variante.tamano }}</span>
+                        <span class="tamano-precio fw-bold text-white">${{ variante.precio | number:'1.2-2' }}</span>
                       </div>
                       <button
                         class="btn-agregar"
-                        (click)="agregarAlCarrito(pizza, i)"
                         [disabled]="!estaAutenticado()"
+                        [class.opacity-50]="!estaAutenticado()"
+                        (click)="agregarAlCarrito(pizza, i)"
                         title="{{ estaAutenticado() ? 'Agregar al carrito' : 'Inicia sesión para agregar' }}">
                         @if (estaAutenticado()) {
                           <span>🛒</span> Agregar
