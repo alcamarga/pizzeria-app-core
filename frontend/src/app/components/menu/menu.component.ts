@@ -101,4 +101,19 @@ export class MenuComponent implements OnInit {
   irALogin(): void {
     this.router.navigate(['/login']);
   }
+
+  // Verifica si el usuario actual es administrador
+  esAdmin(): boolean {
+    return this.auth.isAdmin();
+  }
+
+  // Placeholder para edición de pizza (admin)
+  editarPizza(id: number) {
+    console.log('Editando', id);
+  }
+
+  // Placeholder para eliminación de pizza (admin)
+  eliminarPizza(id: number) {
+    console.log('Eliminando', id);
+  }
 }
