@@ -12,7 +12,7 @@
     <div class="navbar-actions d-flex align-items-center gap-3">
       @if (estaAutenticado() && usuarioActual) {
         <span class="user-greeting">
-          👋 {{ usuarioActual.nombre }}
+          👋 {{ usuarioActual?.nombre }}
         </span>
         <button class="btn-logout" (click)="auth.cerrarSesion(); router.navigate(['/menu'])" title="Cerrar sesión">
           <span>🚪</span>
