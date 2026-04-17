@@ -1,0 +1,15 @@
+/* Custom styles for the login button */
+.custom-login-btn {
+  background-color: #fff3cd; /* Crema suave */
+  border: 1px solid #d4af37; /* Borde sólido de color oro */
+  border-radius: 8px; /* Esquinas redondeadas */
+  padding: 8px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.custom-login-btn:hover {
+  background-color: #ffe08c; /* Crema más oscuro al pasar el mouse */
+  border-color: #b8860b; /* Borde más oscuro al pasar el mouse */
+}

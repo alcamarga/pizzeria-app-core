@@ -1,0 +1,93 @@
+<div class="dashboard-wrapper min-vh-100">
+
+  <!-- Barra de navegación | Navigation bar -->
+  <nav class="navbar-dashboard d-flex justify-content-between align-items-center">
+    <div class="navbar-brand">
+      <span class="logo-icon">🍕</span>
+      <span class="brand-text">Pizzería Core</span>
+    </div>
+    <div class="navbar-actions d-flex align-items-center gap-3">
+      @if (usuarioActual) {
+        <div class="user-info text-end">
+          <div class="user-name">{{ usuarioActual.nombre }}</div>
+          <div class="user-role">{{ usuarioActual.rol | titlecase }}</div>
+        </div>
+        <button class="btn-logout" (click)="cerrarSesion()" title="Cerrar sesión">
+          <span>🚪</span>
+        </button>
+      }
+    </div>
+  </nav>
+
+  <main class="container mt-4">
+    <!-- Estado de conexión HttpClient con el API Python | HttpClient connection status to Python API -->
+    @if (cargandoApi) {
+      <div class="alert alert-secondary" role="status">Comprobando backend…</div>
+    } @else if (errorApi) {
+      <div class="alert alert-warning" role="alert">{{ errorApi }}</div>
+    } @else if (saludApi) {
+      <div class="alert alert-success" role="status">
+        <strong>✓ API conectada</strong> — {{ saludApi.service }}
+      </div>
+    }
+
+    <div class="dashboard-card">
+      <h3 class="dashboard-title">📦 Pedidos Activos</h3>
+
+      @if (cargandoPedidos) {
+        <div class="alert alert-info" role="status">
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Cargando pedidos...
+        </div>
+      } @else if (errorPedidos) {
+        <div class="alert alert-warning" role="alert">{{ errorPedidos }}</div>
+      } @else if (listaPedidos.length === 0) {
+        <div class="empty-state text-center py-5">
+          <span class="empty-icon">📦</span>
+          <p class="mb-0 text-muted">No hay pedidos registrados aún.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table-pedidos">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Artículos</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pedido of listaPedidos; track pedido.id) {
+                <tr>
+                  <td class="fw-bold">
+                    <span class="badge-id">#{{ pedido.id }}</span>
+                  </td>
+                  <td class="text-muted">{{ pedido.fecha_hora }}</td>
+                  <td>
+                    @for (articulo of pedido.articulos; track $index) {
+                      <div class="articulo-item">
+                        <span class="cantidad">{{ articulo.cantidad }}x</span>
+                        <span class="nombre">{{ articulo.nombre }}</span>
+                        <span class="tamano">({{ articulo.tamano }})</span>
+                      </div>
+                    }
+                  </td>
+                  <td class="text-end">
+                    <span class="precio-total">${{ pedido.total | number:'1.2-2' }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </main>
+
+  <footer class="dashboard-footer text-center">
+    <p class="mb-1">Desarrollado con ❤️ por <strong>Camilo</strong> | 2026</p>
+    <small class="text-muted">Sistema de Gestión Core v1.0</small>
+  </footer>
+
+</div>
