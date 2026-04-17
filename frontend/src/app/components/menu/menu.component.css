@@ -7,9 +7,11 @@
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s, border-color 0.3s;
+  color: #000000; /* Text color set to black for better contrast */
 }
 
 .custom-login-btn:hover {
   background-color: #ffe08c; /* Crema más oscuro al pasar el mouse */
   border-color: #b8860b; /* Borde más oscuro al pasar el mouse */
+  color: #000000; /* Text color set to black for better contrast */
 }
