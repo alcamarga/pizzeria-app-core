@@ -25,11 +25,17 @@
   .main-panel .text-warning {
     color: #ffc107;
   }
-  .main-panel table {
-    color: white;
+  .table-container {
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
   }
-  .main-panel .text-muted {
-    color: rgba(255,255,255,0.5);
+  .table-container th {
+    color: #ffc107 !important;
+  }
+  .table-container td {
+    color: white !important;
   }
 </style>
 
@@ -41,32 +47,44 @@
         <button class="btn btn-dark fw-bold px-4" (click)="volverAlMenu()">Ver Menú Público</button>
       </div>
 
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th class="text-warning">ID</th>
-              <th class="text-warning">Nombre del Producto</th>
-              <th class="text-warning">Estado/Stock</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of listaPizzas; track p.id) {
+      <div class="table-container">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
               <tr>
-                <td class="text-muted fw-bold">#{{ p.id }}</td>
-                <td>
-                  <div class="fw-bold text-white h5 mb-0">{{ p.nombre }}</div>
-                  <small class="text-white-50">{{ p.descripcion }}</small>
-                </td>
-                <td class="text-center">
-                  <span class="badge" [ngClass]="{'bg-success': p.activo, 'bg-danger': !p.activo}">
-                    {{ p.activo ? 'Disponible' : 'Agotado' }}
-                  </span>
-                </td>
+                <th class="text-warning">ID</th>
+                <th class="text-warning">Nombre del Producto</th>
+                <th class="text-warning">Descripción</th>
+                <th class="text-warning">Precios</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (p of listaPizzas; track p.id) {
+                <tr>
+                  <td class="text-muted fw-bold">#{{ p.id }}</td>
+                  <td>
+                    <div class="fw-bold text-white h5 mb-0">{{ p.nombre }}</div>
+                  </td>
+                  <td class="text-white">
+                    {{ p.descripcion }}
+                  </td>
+                  <td class="text-white">
+                    @if (p.variantes && p.variantes.length > 0) {
+                      <span class="variant-list">
+                        @for (v of p.variantes; track v.tamano) {
+                          {{ v.tamano }}: ${{ v.precio | number:'1.0-0' }} 
+                          @if (!$last) | 
+                        }
+                      </span>
+                    } @else {
+                      <span class="text-muted">Sin variantes</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
