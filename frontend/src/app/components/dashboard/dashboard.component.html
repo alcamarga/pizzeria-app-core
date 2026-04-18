@@ -37,7 +37,7 @@
   <div class="light-overlay">
     <div class="container main-panel">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold"><span class="text-warning">📦</span> Gestión de Productos</h2>
+        <h2 class="fw-bold"><span class="text-warning">📦</span> Inventario de Productos</h2>
         <button class="btn btn-dark fw-bold px-4" (click)="volverAlMenu()">Ver Menú Público</button>
       </div>
 
@@ -46,9 +46,8 @@
           <thead>
             <tr>
               <th class="text-warning">ID</th>
-              <th class="text-warning">Producto</th>
-              <th class="text-warning">Variantes y Precios</th>
-              <th class="text-warning text-center">Acciones</th>
+              <th class="text-warning">Nombre del Producto</th>
+              <th class="text-warning">Estado/Stock</th>
             </tr>
           </thead>
           <tbody>
@@ -59,14 +58,10 @@
                   <div class="fw-bold text-white h5 mb-0">{{ p.nombre }}</div>
                   <small class="text-white-50">{{ p.descripcion }}</small>
                 </td>
-                <td>
-                  @for (v of p.variantes; track v.tamano) {
-                    <span class="badge bg-light text-dark me-1">{{ v.tamano }}: ${{ v.precio | number }}</span>
-                  }
-                </td>
                 <td class="text-center">
-                  <button class="btn btn-sm btn-primary me-2 px-3" (click)="editarPizza(p.id)">Editar</button>
-                  <button class="btn btn-sm btn-danger px-3" (click)="eliminarPizza(p.id)">Eliminar</button>
+                  <span class="badge" [ngClass]="{'bg-success': p.activo, 'bg-danger': !p.activo}">
+                    {{ p.activo ? 'Disponible' : 'Agotado' }}
+                  </span>
                 </td>
               </tr>
             }

@@ -52,27 +52,6 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // Función para eliminar (conectada al botón🗑️ del HTML)
-  eliminarPizza(id: number): void {
-    if (confirm('¿Realmente deseas eliminar esta pizza del inventario?')) {
-      // Eliminar de la lista local para actualización inmediata
-      this.listaPizzas = this.listaPizzas.filter(pizza => pizza.id !== id);
-      this.pizzaService.eliminarPizza(id).subscribe({
-        next: () => {
-          alert('Pizza eliminada correctamente');
-        },
-        error: () => {
-          alert('Error al eliminar. La pizza ha sido quitada de la vista pero podría seguir existiendo en el servidor. Por favor, verifique.');
-        }
-      });
-    }
-  }
-
-  // Función para editar (conectada al botón ✏️ del HTML)
-  editarPizza(id: number): void {
-    alert('Abriendo edición para la pizza ID: ' + id);
-  }
-
   // Función para volver al menú público
   volverAlMenu(): void {
     this.router.navigate(['/menu']);
