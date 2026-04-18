@@ -55,6 +55,7 @@ export class AuthService {
     localStorage.removeItem(CLAVE_TOKEN);
     localStorage.removeItem(CLAVE_USUARIO);
     this._sesion$.next(null);
+    location.reload();
   }
 
   private registrarSesionLocal(respuesta: RespuestaAutenticacion): void {

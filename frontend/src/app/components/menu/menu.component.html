@@ -30,13 +30,20 @@
           @if (usuarioActual?.rol === 'admin') {
             <button class="btn btn-warning btn-sm fw-bold" (click)="irAlDashboard()">📊 Dashboard</button>
           }
-          <button class="btn btn-outline-light btn-sm" (click)="auth.cerrarSesion()">Salir</button>
+          @if (estaAutenticado()) {
+            <button class="btn btn-outline-light btn-sm" (click)="auth.cerrarSesion()">Salir</button>
+          } @else {
+            <button class="btn btn-outline-light btn-sm" (click)="router.navigate(['/login'])">Iniciar Sesión</button>
+          }
         </div>
       </div>
     </nav>
 
     <div class="container py-5 text-center">
       <h1 class="display-3 fw-bold mb-5 text-white" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.9)">Nuestro Menú</h1>
+      @if (usuarioActual?.rol === 'admin') {
+        <button class="btn btn-warning w-100 mb-4" (click)="irAlDashboard()">➕ Agregar Pizza</button>
+      }
       <div class="row g-4 text-start">
         @for (pizza of pizzas(); track pizza.id) {
           <div class="col-md-6 col-lg-4">
