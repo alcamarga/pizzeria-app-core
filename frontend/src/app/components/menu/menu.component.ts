@@ -78,7 +78,9 @@ export class MenuComponent implements OnInit {
   }
 
   editarPizza(id: number) {
-    alert('Abriendo edición para la pizza ID: ' + id);
+    const pizza = this.pizzas().find(p => p.id === id);
+    const nombre = pizza ? pizza.nombre : 'desconocida';
+    alert('Editando detalles de: ' + nombre);
   }
 
   eliminarPizza(id: number) {
