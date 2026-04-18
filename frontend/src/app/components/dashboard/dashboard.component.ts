@@ -57,9 +57,10 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/menu']);
   }
 
-  // Función para cerrar sesión con redirección limpia
+  // Función para cerrar sesión con redirección limpia y refresco forzado
   cerrarSesion(): void {
-    this.auth.cerrarSesion();
+    this.auth.logout();
     this.router.navigate(['/menu']);
+    window.location.reload();
   }
 }
