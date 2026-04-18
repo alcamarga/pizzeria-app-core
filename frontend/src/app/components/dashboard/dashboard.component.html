@@ -72,8 +72,7 @@
                     @if (p.variantes && p.variantes.length > 0) {
                       <span class="variant-list">
                         @for (v of p.variantes; track v.tamano) {
-                          {{ v.tamano }}: ${{ v.precio | number:'1.0-0' }} 
-                          @if (!$last) | 
+                          {{ v.tamano }}: ${{ v.precio | number:'1.0-0' }}{{ !$last ? ' |' : '' }}
                         }
                       </span>
                     } @else {
