@@ -1,8 +1,3 @@
-// Componente Menu para mostrar el catálogo de pizzas de forma pública.
-// Autor: Camilo Martinez
-// Fecha: 15/04/2026
-// Estética: Crema/Dorado con transparencia y bordes redondeados
-
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -25,40 +20,28 @@ export class MenuComponent implements OnInit {
   route = inject(ActivatedRoute);
   cartService = inject(CartService);
 
-  // Catálogo de pizzas | Pizza catalog
   pizzas = signal<Pizza[]>([]);
-
-  // Estado de carga | Loading state
   cargando = signal(true);
   error = signal<string | null>(null);
-
-  // Estado de autenticación | Authentication state
   estaAutenticado = computed(() => this.auth.estaAutenticado());
   usuarioActual = this.auth.obtenerUsuarioActual();
-
-  // Mensaje de confirmación | Confirmation message
   mensajeExito = signal<string | null>(null);
 
   ngOnInit(): void {
     this.cargarMenu();
-    // Manejar intención de compra post-login
     this.manejarIntencionCompra();
   }
 
-  // Manejar query params de intención de compra después de login
   private manejarIntencionCompra(): void {
     this.route.queryParams.subscribe(params => {
       const pizzaId = params['agregar'];
       const tamanoIndice = params['tamano'];
-
       if (pizzaId && tamanoIndice !== undefined && this.estaAutenticado()) {
         const pizza = this.pizzas().find(p => p.id === Number(pizzaId));
         if (pizza) {
           this.cartService.agregarAlCarrito(pizza, Number(tamanoIndice));
           this.mensajeExito.set('¡Pizza agregada al carrito! 🎉');
-          // Limpiar URL sin recargar
           this.router.navigate(['/menu'], { replaceUrl: true });
-          // Ocultar mensaje después de 3 segundos
           setTimeout(() => this.mensajeExito.set(null), 3000);
         }
       }
@@ -67,8 +50,6 @@ export class MenuComponent implements OnInit {
 
   cargarMenu(): void {
     this.cargando.set(true);
-    this.error.set(null);
-
     this.pizzaService.obtenerCatalogoPizzas().subscribe({
       next: (pizzas) => {
         this.pizzas.set(pizzas.filter(p => p.activo));
@@ -76,44 +57,35 @@ export class MenuComponent implements OnInit {
       },
       error: (err) => {
         this.cargando.set(false);
-        this.error.set('No se pudo cargar el menú. Intenta de nuevo más tarde.');
-        console.error('Error al cargar pizzas:', err);
+        this.error.set('Error al cargar el menú.');
       }
     });
   }
 
-  // Manejar clic en "Agregar al Carrito"
   agregarAlCarrito(pizza: Pizza, tamanoIndice: number): void {
     if (!this.estaAutenticado()) {
-      // Si no está logueado, guardamos la intención y mandamos al login
-      // Esto es lo que querías: "si da agregar, pida loguear"
       this.router.navigate(['/login']);
       return;
     }
-
-    // Si ya está autenticado, agregamos al carrito
     this.cartService.agregarAlCarrito(pizza, tamanoIndice);
     this.mensajeExito.set(`¡${pizza.nombre} agregada! 🎉`);
     setTimeout(() => this.mensajeExito.set(null), 3000);
   }
 
-  // Navegar a login | Navigate to login
-  irALogin(): void {
-    this.router.navigate(['/login']);
+  // --- NUEVAS FUNCIONES PARA EL ADMIN ---
+  irAlDashboard(): void {
+    this.router.navigate(['/dashboard']);
   }
 
-  // Verifica si el usuario actual es administrador
-  esAdmin(): boolean {
-    return this.auth.isAdmin();
-  }
-
-  // Placeholder para edición de pizza (admin)
   editarPizza(id: number) {
-    console.log('Editando', id);
+    alert('Abriendo edición para la pizza ID: ' + id);
   }
 
-  // Placeholder para eliminación de pizza (admin)
   eliminarPizza(id: number) {
-    console.log('Eliminando', id);
+    if(confirm('¿Estás seguro de eliminar esta pizza?')) {
+      console.log('Eliminando pizza:', id);
+      // Aquí puedes filtrar el signal para que desaparezca de la vista
+      this.pizzas.set(this.pizzas().filter(p => p.id !== id));
+    }
   }
 }
