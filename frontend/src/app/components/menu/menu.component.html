@@ -1,267 +1,68 @@
-<!-- Menú público de pizzas | Public pizza menu -->
-<!-- Autor: Camilo Martinez | Fecha: 15/04/2026 -->
-
 <style>
-  /* Efecto cristal (Glassmorphism) para las tarjetas */
-  .pizza-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
-    border-radius: 12px;
-    overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    max-width: 250px;
-    margin: 0 auto;
+  .menu-page {
+    /* Usamos filter: brightness para aclarar la imagen sin capas negras */
+    background-image: url('/assets/images/pizzeria-app-core.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    /* Ajusta este valor (1.2 es más luz, 0.8 es menos) */
+    filter: brightness(1.1); 
   }
-  .pizza-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  }
-  .pizza-card-header,
-  .pizza-card-body {
-    padding: 1.5rem;
-  }
-  .pizza-card-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
+  
+  /* Contenedor para que el contenido NO se aclare con el fondo */
+  .content-wrapper { filter: brightness(1) !important; position: relative; z-index: 1; }
 
-  /* Texto blanco con sombra para legibilidad */
-  .pizza-nombre,
-  .pizza-descripcion,
-  .tamano-nombre,
-  .tamano-precio {
-    color: #ffffff;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-  }
-  .pizza-nombre {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.4rem;
-  }
-  .pizza-descripcion {
-    margin: 0 0 1rem 0;
-    flex-grow: 1;
-    opacity: 0.9;
-  }
-
-  /* Selector de tamaños compacto */
-  .tamanos-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  .tamano-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .tamano-info {
-    display: flex;
-    flex-direction: column;
-  }
-  .tamano-nombre {
-    font-size: 0.9rem;
-    opacity: 0.9;
-  }
-  .tamano-precio {
-    font-weight: bold;
-    font-size: 1.1rem;
-  }
-
-  /* Botones de acción */
-  .btn-agregar {
-    width: 100%;
-    text-align: left;
-    padding: 0.6rem 0.8rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.2s, opacity 0.2s;
-  }
-  .btn-agregar:not(:disabled):hover {
-    opacity: 0.9;
-  }
-  .btn-agregar:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  /* Estilo minimalista para botón de login */
-  .btn-login {
-    background: transparent;
-    border: 1px solid white;
-    color: white;
-    padding: 4px 8px;
-    font-size: 12px;
-  }
-  .btn-login:hover {
-    background: white;
-    color: #000;
-  }
-  /* Botones de admin */
-  .btn-edit, .btn-delete {
-    width: 48%;
-    padding: 0.4rem 0.6rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: background-color 0.2s, opacity 0.2s;
-    margin-top: 0.2rem;
-  }
-  .btn-edit {
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-  }
-  .btn-edit:hover {
-    background: rgba(255,255,255,0.3);
-  }
-  .btn-delete {
-    background: rgba(255,82,82,0.2);
-    color: #fff;
-  }
-  .btn-delete:hover {
-    background: rgba(255,82,82,0.3);
-  }
-
-  /* Banner de aviso de login (eliminado) */
-  /* .login-banner { ... } */
-
-  /* Footer de autor */
-  .author-footer {
-    text-align: center;
-    color: #ffffff;
-    font-size: 0.8rem;
-    background: rgba(0,0,0,0.5);
-    padding: 20px;
-    margin-top: auto; /* empuja al final si el contenedor es flex column */
-  }
-
-  /* Responsivo */
-  @media (min-width: 768px) {
-    .pizza-card-body {
-      padding: 2rem;
-    }
-    .tamano-precio {
-      font-size: 1.2rem;
-    }
+  .glass-card { 
+    background: rgba(0, 0, 0, 0.75); /* Tarjeta oscura para que el texto blanco resalte */
+    backdrop-filter: blur(10px); 
+    border: 1px solid rgba(255,255,255,0.2); 
+    border-radius: 20px;
   }
 </style>
 
-<div class="menu-wrapper min-vh-100 d-flex flex-column">
-
-  <!-- Barra de navegación | Navigation bar -->
-  <nav class="navbar-menu d-flex justify-content-between align-items-center">
-    <div class="navbar-brand">
-      <span class="logo-icon">🍕</span>
-      <span class="brand-text">Pizzería Core</span>
-    </div>
-    <div class="navbar-actions d-flex align-items-center gap-3">
-      @if (estaAutenticado() && usuarioActual) {
-        <span class="user-greeting">
-          👋 {{ usuarioActual?.nombre }}
-        </span>
-        <button class="btn-logout" (click)="auth.cerrarSesion(); router.navigate(['/menu'])" title="Cerrar sesión">
-          <span>🚪</span>
-        </button>
-      } @else {
-        <button class="btn btn-outline-light btn-lg ms-2" (click)="irALogin()">
-          <span>🔐</span> Iniciar Sesión
-        </button>
-      }
-    </div>
-  </nav>
-
-  <main class="container mt-4 flex-grow-1">
-    <!-- Mensaje de éxito | Success message -->
-    @if (mensajeExito()) {
-      <div class="alert alert-success text-center mb-4" role="status">
-        {{ mensajeExito() }}
-      </div>
-    }
-
-    <!-- Encabezado del menú | Menu header -->
-    <div class="menu-header text-center mb-5">
-      <h1 class="menu-title">Nuestro Menú</h1>
-      <p class="menu-subtitle">Selecciona tu pizza favorita y agrégala al carrito</p>
-      <!-- Aviso de login eliminado -->
-    </div>
-
-    <!-- Estado de carga | Loading state -->
-    @if (cargando()) {
-      <div class="loading-state text-center py-5">
-        <div class="spinner-large spinner-border" role="status">
-          <span class="visually-hidden">Cargando...</span>
+<div class="menu-page">
+  <div class="content-wrapper">
+    <nav class="navbar navbar-dark bg-dark bg-opacity-75 p-3">
+      <div class="container d-flex justify-content-between">
+        <span class="navbar-brand fw-bold text-warning">🍕 Pizzería Core</span>
+        <div class="d-flex gap-2">
+          @if (usuarioActual?.rol === 'admin') {
+            <button class="btn btn-warning btn-sm fw-bold" (click)="irAlDashboard()">📊 Dashboard</button>
+          }
+          <button class="btn btn-outline-light btn-sm" (click)="auth.cerrarSesion()">Salir</button>
         </div>
-        <p class="mt-3 text-muted">Cargando el menú...</p>
       </div>
-    } @else if (error()) {
-      <!-- Error state -->
-      <div class="alert alert-warning text-center" role="alert">
-        {{ error() }}
-        <button class="btn btn-link ms-2" (click)="cargarMenu()">Reintentar</button>
-      </div>
-    } @else if (pizzas().length === 0) {
-      <!-- Empty state -->
-      <div class="empty-state text-center py-5">
-        <span class="empty-icon">🍕</span>
-        <p class="text-muted">No hay pizzas disponibles en este momento.</p>
-      </div>
-    } @else {
-      <!-- Grid de pizzas | Pizza grid -->
-      <div class="pizza-grid row g-4 justify-content-center">
+    </nav>
+
+    <div class="container py-5 text-center">
+      <h1 class="display-3 fw-bold mb-5 text-white" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.9)">Nuestro Menú</h1>
+      <div class="row g-4 text-start">
         @for (pizza of pizzas(); track pizza.id) {
           <div class="col-md-6 col-lg-4">
-            <div class="pizza-card">
-              <div class="pizza-card-header">
-                <h3 class="pizza-nombre text-white">{{ pizza.nombre }}</h3>
+            <div class="glass-card p-4 h-100 shadow-lg text-white">
+              <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
+                <h3 class="text-warning fw-bold h4 mb-0">{{ pizza.nombre }}</h3>
+                @if (usuarioActual?.rol === 'admin') {
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-info" (click)="editarPizza(pizza.id)">✏️</button>
+                    <button class="btn btn-sm btn-outline-danger" (click)="eliminarPizza(pizza.id)">🗑️</button>
+                  </div>
+                }
               </div>
-              <div class="pizza-card-body">
-                <p class="pizza-descripcion">{{ pizza.descripcion }}</p>
-
-                <!-- Selector de tamaños y precios | Size and price selector -->
-                <div class="tamanos-list">
-                  @for (variante of pizza.variantes; track variante.tamano; let i = $index) {
-                    <div class="tamano-item">
-                      <div class="tamano-info">
-                        <span class="tamano-nombre text-white">{{ variante.tamano }}</span>
-                        <span class="tamano-precio fw-bold text-white">${{ variante.precio | number:'1.2-2' }}</span>
-                      </div>
-                      @if (esAdmin()) {
-                        <button class="btn-edit" (click)="editarPizza(pizza.id)">✏️ Editar</button>
-                        <button class="btn-delete" (click)="eliminarPizza(pizza.id)">🗑️ Eliminar</button>
-                      } @else {
-                        <button
-                          class="btn-agregar"
-                          [class.btn-login]="!estaAutenticado()"
-                          [disabled]="!estaAutenticado()"
-                          (click)="agregarAlCarrito(pizza, i)"
-                          title="{{ estaAutenticado() ? 'Agregar al carrito' : 'Inicia sesión para agregar' }}">
-                          @if (estaAutenticado()) {
-                            <span>🛒</span> Agregar
-                          } @else {
-                            <span>🔐</span> Login
-                          }
-                        </button>
-                      }
-                    </div>
+              <p class="small opacity-75 mb-4">{{ pizza.descripcion }}</p>
+              @for (v of pizza.variantes; track v.tamano; let i = $index) {
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-white bg-opacity-10 border border-white border-opacity-10">
+                  <span class="small">{{ v.tamano }}: <b class="text-warning">${{ v.precio | number }}</b></span>
+                  @if (usuarioActual?.rol !== 'admin') {
+                    <button class="btn btn-warning btn-sm" (click)="agregarAlCarrito(pizza, i)">🛒 Comprar</button>
                   }
                 </div>
-              </div>
+              }
             </div>
           </div>
         }
       </div>
-    }
-  </main>
-
-  <!-- Footer de autor -->
-  <footer class="author-footer">
-    © 2026 by Camilo Martinez Galarza | Desarrollador Fullstack Apoyado en IA
-  </footer>
-
+    </div>
+  </div>
 </div>
