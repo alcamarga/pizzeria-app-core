@@ -1,293 +1,135 @@
 /* Estilos del Dashboard | Dashboard styles */
 /* Autor: Camilo Martinez | Fecha: 15/04/2026 */
-/* Estética: Crema/Dorado con transparencia y bordes redondeados */
+/* Estética: Crema/Dorado con transparencia y bordes redondeados - UI Oscura */
 
 :host {
   --color-oro: #d4af37;
   --color-oro-oscuro: #b8922c;
   --color-crema: #fff8e7;
   --color-crema-oscuro: #f0e6c8;
-  --color-blanco: #ffffff;
-  --color-texto: #2c2c2c;
-  --color-texto-suave: #666666;
+  --color-fondo-oscuro: rgba(0, 0, 0, 0.8);
   --color-borde: rgba(212, 175, 55, 0.3);
-  --sombra-suave: 0 4px 20px rgba(0, 0, 0, 0.08);
-  --sombra-fuerte: 0 8px 30px rgba(0, 0, 0, 0.12);
-  --radio-borde: 16px;
+  --sombra-fuerte: 0 8px 30px rgba(0, 0, 0, 0.3);
+  --radio-borde: 20px;
 }
 
 /* Wrapper principal | Main wrapper */
-.dashboard-wrapper {
-  background: linear-gradient(135deg, var(--color-crema) 0%, var(--color-crema-oscuro) 100%);
+.dash-container {
+  background-image: url('/assets/images/pizzeria-app-core.jpg');
+  background-size: cover;
+  background-position: center;
   min-height: 100vh;
+  filter: brightness(1.1);
 }
 
-/* Barra de navegación | Navigation bar */
-.navbar-dashboard {
-  background: linear-gradient(135deg, var(--color-oro) 0%, var(--color-oro-oscuro) 100%);
-  padding: 16px 24px;
-  box-shadow: var(--sombra-fuerte);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.navbar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: white;
-  font-weight: 700;
-  font-size: 1.25rem;
-}
-
-.logo-icon {
-  font-size: 1.75rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.brand-text {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* Información del usuario | User info */
-.user-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.user-name {
-  color: white;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.user-role {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.75rem;
-  text-transform: capitalize;
-}
-
-/* Botón de logout | Logout button */
-.btn-logout {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1.25rem;
-}
-
-.btn-logout:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
-}
-
-/* Tarjeta del dashboard | Dashboard card */
-.dashboard-card {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+/* Panel principal | Main panel */
+.main-panel {
+  background: var(--color-fondo-oscuro);
+  backdrop-filter: blur(15px);
   border-radius: var(--radio-borde);
   border: 1px solid var(--color-borde);
-  box-shadow: var(--sombra-suave);
-  padding: 24px;
-  max-width: 900px;
+  box-shadow: var(--sombra-fuerte);
+  padding: 30px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.dashboard-title {
-  color: var(--color-oro-oscuro);
+.main-panel h2 {
+  color: var(--color-oro);
   font-weight: 700;
-  font-size: 1.5rem;
   margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--color-borde);
 }
 
-/* Alertas | Alerts */
-.alert {
-  border-radius: 12px;
-  padding: 14px 18px;
-  font-size: 0.95rem;
-  border: none;
-  max-width: 900px;
-  margin: 0 auto 20px;
+/* Botón de volver | Back button */
+.btn-dark {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--color-crema);
+  transition: all 0.3s ease;
 }
 
-.alert-info {
-  background: rgba(13, 110, 253, 0.1);
-  color: #0d6efd;
-  border: 1px solid rgba(13, 110, 253, 0.2);
+.btn-dark:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
-.alert-warning {
-  background: rgba(255, 193, 7, 0.1);
-  color: #856404;
-  border: 1px solid rgba(255, 193, 7, 0.2);
+/* Contenedor de tabla | Table container */
+.table-container {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 15px;
+  padding: 20px;
+  margin-top: 20px;
+  border: 1px solid var(--color-borde);
 }
 
-.alert-success {
-  background: rgba(25, 135, 84, 0.1);
-  color: #198754;
-  border: 1px solid rgba(25, 135, 84, 0.2);
-}
-
-/* Estado vacío | Empty state */
-.empty-state {
-  padding: 40px !important;
-}
-
-.empty-icon {
-  font-size: 4rem;
-  display: block;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-/* Tabla de pedidos | Orders table */
-.table-pedidos {
+/* Tabla de productos | Products table */
+.table-container .table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  margin-top: 16px;
+  margin: 0;
+  background: transparent !important;
 }
 
-.table-pedidos th {
-  background: linear-gradient(135deg, var(--color-oro) 0%, var(--color-oro-oscuro) 100%);
-  color: white;
-  font-weight: 600;
-  font-size: 0.85rem;
+.table-container .table thead th {
+  color: var(--color-oro) !important;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 14px 16px;
-  text-align: left;
+  border-bottom: 2px solid var(--color-oro);
+  background: rgba(0, 0, 0, 0.6) !important;
 }
 
-.table-pedidos th:first-child {
-  border-radius: 12px 0 0 0;
-}
-
-.table-pedidos th:last-child {
-  border-radius: 0 12px 0 0;
-}
-
-.table-pedidos td {
+.table-container .table tbody td {
+  color: #f5f5dc !important;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 248, 231, 0.15);
   vertical-align: middle;
+  background: transparent !important;
 }
 
-.table-pedidos tbody tr {
+.table-container .table tbody tr {
   transition: all 0.2s ease;
+  background: rgba(0, 0, 0, 0.4) !important;
 }
 
-.table-pedidos tbody tr:hover {
-  background: rgba(212, 175, 55, 0.05);
+.table-container .table tbody tr:hover {
+  background: rgba(212, 175, 55, 0.15) !important;
 }
 
-.table-pedidos tbody tr:last-child td {
+.table-container .table tbody tr:last-child td {
   border-bottom: none;
 }
 
 /* Badge de ID | ID badge */
-.badge-id {
-  background: linear-gradient(135deg, var(--color-oro) 0%, var(--color-oro-oscuro) 100%);
-  color: white;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
+.text-muted {
+  color: rgba(255, 248, 231, 0.6) !important;
 }
 
-/* Items del pedido | Order items */
-.articulo-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.articulo-item .cantidad {
-  font-weight: 700;
-  color: var(--color-oro-oscuro);
-}
-
-.articulo-item .nombre {
-  color: var(--color-texto);
-}
-
-.articulo-item .tamano {
-  color: var(--color-texto-suave);
-  font-size: 0.85rem;
-}
-
-/* Precio total | Total price */
-.precio-total {
-  background: linear-gradient(135deg, var(--color-oro) 0%, var(--color-oro-oscuro) 100%);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-/* Footer | Footer */
-.dashboard-footer {
-  padding: 24px;
-  margin-top: 40px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  color: var(--color-texto-suave);
-}
-
-/* Spinner */
-.spinner-border {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-width: 0.15em;
-  color: currentColor;
+/* Variant list */
+.variant-list {
+  color: var(--color-crema);
+  font-size: 0.9rem;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .navbar-dashboard {
-    padding: 12px 16px;
-  }
-
-  .brand-text {
-    font-size: 1rem;
-  }
-
-  .user-info {
-    display: none;
-  }
-
-  .dashboard-card {
+  .main-panel {
     padding: 16px;
     margin: 0 12px;
   }
 
-  .dashboard-title {
+  .main-panel h2 {
     font-size: 1.25rem;
   }
 
-  .table-pedidos {
+  .table {
     font-size: 0.85rem;
   }
 
-  .table-pedidos th,
-  .table-pedidos td {
+  .table th,
+  .table td {
     padding: 10px 8px;
-  }
-
-  .articulo-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
   }
 }

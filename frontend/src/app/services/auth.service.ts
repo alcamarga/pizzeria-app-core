@@ -51,10 +51,8 @@ export class AuthService {
     );
   }
 
-  logout(): void {
-    localStorage.removeItem(CLAVE_TOKEN);
-    localStorage.removeItem(CLAVE_USUARIO);
-    this._sesion$.next(null);
+  cerrarSesion(): void {
+    localStorage.clear();
     location.reload();
   }
 
@@ -79,7 +77,7 @@ export class AuthService {
       const usuario: Usuario = JSON.parse(usuarioCrudo) as Usuario;
       return { usuario, accessToken: token };
     } catch {
-      this.logout();
+      this.cerrarSesion();
       return null;
     }
   }

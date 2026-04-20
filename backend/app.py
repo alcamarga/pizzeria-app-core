@@ -273,47 +273,59 @@ def login() -> tuple[Response, int]:
     return jsonify({"access_token": token, "usuario": usuario.serializar()}), 200
 
 
-@app.route("/api/pizzas", methods=["GET"])
-def obtener_pizzas() -> Response:
-    lista_pizzas: list[dict] = [
-        {
-            "id": 1,
-            "nombre": "Hawaiana",
-            "descripcion": "Salsa de tomate, queso mozzarella, jamon y pina",
+# 1. Definimos la lista inicial (con las 3 clásicas) fuera de las rutas
+PIZZAS_DATOS = [
+    {
+        "id": 1,
+        "nombre": "Hawaiana",
+        "descripcion": "Salsa de tomate, queso mozzarella, jamon y pina",
+        "variantes": [{"tamano": "Personal", "precio": 20000}, {"tamano": "Mediana", "precio": 25000}, {"tamano": "Familiar", "precio": 32500}],
+        "activo": True,
+    },
+    {
+        "id": 2,
+        "nombre": "Pepperoni",
+        "descripcion": "Salsa de tomate, queso mozzarella y pepperoni",
+        "variantes": [{"tamano": "Personal", "precio": 22000}, {"tamano": "Mediana", "precio": 28000}, {"tamano": "Familiar", "precio": 36400}],
+        "activo": True,
+    },
+    {
+        "id": 3,
+        "nombre": "Vegetariana",
+        "descripcion": "Salsa de tomate, queso mozzarella, champinones, pimientos y cebolla",
+        "variantes": [{"tamano": "Personal", "precio": 21000}, {"tamano": "Mediana", "precio": 27000}, {"tamano": "Familiar", "precio": 35100}],
+        "activo": True,
+    }
+]
+
+@app.route("/api/pizzas", methods=["GET", "POST"])
+def gestionar_pizzas() -> Response:
+    global PIZZAS_DATOS  # Esto le dice a Python que use la lista de arriba
+    
+    if request.method == "POST":
+        datos = request.get_json() or {}
+        
+        # Creamos la estructura que Angular espera recibir
+        nueva_pizza = {
+            "id": len(PIZZAS_DATOS) + 1,
+            "nombre": datos.get('nombre', 'Nueva Pizza'),
+            "descripcion": datos.get('descripcion', ''),
             "variantes": [
-                {"tamano": "Personal", "precio": 20000},
-                {"tamano": "Mediana", "precio": 25000},
-                {"tamano": "Familiar", "precio": 32500},
+                {"tamano": "Personal", "precio": datos.get('precioPersonal', 0)},
+                {"tamano": "Mediana", "precio": datos.get('precioMediana', 0)},
+                {"tamano": "Familiar", "precio": datos.get('precioFamiliar', 0)}
             ],
-            "imagen": "/images/hawaina.png",
-            "activo": True,
-        },
-        {
-            "id": 2,
-            "nombre": "Pepperoni",
-            "descripcion": "Salsa de tomate, queso mozzarella y pepperoni",
-            "variantes": [
-                {"tamano": "Personal", "precio": 22000},
-                {"tamano": "Mediana", "precio": 28000},
-                {"tamano": "Familiar", "precio": 36400},
-            ],
-            "imagen": "/images/pepperoni.png",
-            "activo": True,
-        },
-        {
-            "id": 3,
-            "nombre": "Vegetariana",
-            "descripcion": "Salsa de tomate, queso mozzarella, champinones, pimientos y cebolla",
-            "variantes": [
-                {"tamano": "Personal", "precio": 21000},
-                {"tamano": "Mediana", "precio": 27000},
-                {"tamano": "Familiar", "precio": 35100},
-            ],
-            "imagen": "/images/vegetariana.png",
-            "activo": True,
-        },
-    ]
-    return jsonify({"pizzas": lista_pizzas})
+            "activo": True
+        }
+        
+        # ✅ LA MAGIA: Guardamos en la lista global
+        PIZZAS_DATOS.append(nueva_pizza)
+        print(f"[INFO] ¡Pizza {nueva_pizza['nombre']} guardada con éxito!")
+        
+        return jsonify({"status": "ok", "pizza": nueva_pizza}), 201
+
+    # Para el GET, simplemente devolvemos la lista completa
+    return jsonify({"pizzas": PIZZAS_DATOS})
 
 
 @app.route("/api/pedidos", methods=["POST"])

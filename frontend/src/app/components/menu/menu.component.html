@@ -41,8 +41,39 @@
 
     <div class="container py-5 text-center">
       <h1 class="display-3 fw-bold mb-5 text-white" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.9)">Nuestro Menú</h1>
+
       @if (usuarioActual?.rol === 'admin') {
-        <button class="btn btn-warning w-100 mb-4" (click)="irAlDashboard()">➕ Agregar Pizza</button>
+        @if (mostrarFormulario) {
+          <div class="glass-card p-4 mb-4 text-start" style="max-width: 600px; margin: 0 auto 30px;">
+            <h3 class="text-warning fw-bold mb-3">➕ Agregar Nueva Pizza</h3>
+            <div class="mb-3">
+              <label class="form-label text-crema">Nombre</label>
+              <input type="text" class="form-control" [(ngModel)]="nuevaPizza.nombre" placeholder="Ej: Pizza Pepperoni">
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-crema">Descripción</label>
+              <textarea class="form-control" [(ngModel)]="nuevaPizza.descripcion" rows="3" placeholder="Ej: Deliciosa pizza con pepperoni y queso mozzarella"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-crema">Precio Personal (6")</label>
+              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precioPersonal" placeholder="Ej: 12000">
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-crema">Precio Mediana (10")</label>
+              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precioMediana" placeholder="Ej: 18000">
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-crema">Precio Familiar (14")</label>
+              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precioFamiliar" placeholder="Ej: 25000">
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-warning fw-bold" (click)="guardarPizza()">💾 Guardar</button>
+              <button class="btn btn-outline-light" (click)="cancelarFormulario()">❌ Cancelar</button>
+            </div>
+          </div>
+        } @else {
+          <button class="btn btn-warning w-100 mb-4" (click)="toggleFormulario()">➕ Agregar Pizza</button>
+        }
       }
       <div class="row g-4 text-start">
         @for (pizza of pizzas(); track pizza.id) {
@@ -52,7 +83,7 @@
                 <h3 class="text-warning fw-bold h4 mb-0">{{ pizza.nombre }}</h3>
                 @if (usuarioActual?.rol === 'admin') {
                   <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-info" (click)="editarPizza(pizza.id)">✏️</button>
+                    <button class="btn btn-sm btn-outline-info" (click)="modificarPizza(pizza.id)">✏️</button>
                     <button class="btn btn-sm btn-outline-danger" (click)="eliminarPizza(pizza.id)">🗑️</button>
                   </div>
                 }

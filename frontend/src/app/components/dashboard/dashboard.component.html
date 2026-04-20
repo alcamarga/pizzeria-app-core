@@ -5,43 +5,43 @@
     background-position: center;
     min-height: 100vh;
     padding: 40px 20px;
-    filter: brightness(1.2);
-  }
-  .light-overlay {
-    background: rgba(255, 255, 255, 0.2);
-    min-height: 100vh;
-    padding: 40px 20px;
+    filter: brightness(1.1);
   }
   .main-panel {
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(15px);
     border-radius: 20px;
-    color: white;
+    color: #fff8e7;
     padding: 30px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
   }
   .main-panel h2 {
-    color: #ffc107;
-  }
-  .main-panel .text-warning {
-    color: #ffc107;
+    color: #d4af37;
   }
   .table-container {
-    background: rgba(0, 0, 0, 0.9) !important;
+    background: rgba(0, 0, 0, 0.8);
     border-radius: 15px;
     padding: 20px;
     margin-top: 20px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
   }
   .table-container th {
-    color: #ffc107 !important;
+    color: #d4af37 !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   .table-container td {
-    color: white !important;
+    color: #fff8e7 !important;
+    border-bottom: 1px solid rgba(255, 248, 231, 0.1);
+  }
+  .table-container tr:hover td {
+    background: rgba(212, 175, 55, 0.05);
   }
 </style>
 
 <div class="dash-container">
-  <div class="light-overlay">
-    <div class="container main-panel">
+  <div class="container main-panel">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold"><span class="text-warning">📦</span> Inventario de Productos</h2>
         <button class="btn btn-dark fw-bold px-4" (click)="volverAlMenu()">Ver Menú Público</button>
@@ -87,4 +87,3 @@
       </div>
     </div>
   </div>
-</div>

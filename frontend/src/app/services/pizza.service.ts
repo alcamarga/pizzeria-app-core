@@ -55,4 +55,11 @@ export class PizzaService {
       map((respuesta: RespuestaPedidos) => respuesta.pedidos)
     );
   }
+  // Añade esto al final de tu PizzaService
+  eliminarPizza(id: number): Observable<any> {
+    return this.http.delete(`${URL_API_PIZZAS}/${id}`);
+  }
+  crearPizza(pizza: any): Observable<any> {
+    return this.http.post(URL_API_PIZZAS, pizza);
+  }
 }

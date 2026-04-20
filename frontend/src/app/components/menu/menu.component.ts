@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { PizzaService } from '../../services/pizza.service';
 import { AuthService } from '../../services/auth.service';
@@ -9,7 +10,7 @@ import { Pizza } from '../../models/pizza.model';
 @Component({
   selector: 'app-menu',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.css']
 })
@@ -77,17 +78,53 @@ export class MenuComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
-  editarPizza(id: number) {
-    const pizza = this.pizzas().find(p => p.id === id);
-    const nombre = pizza ? pizza.nombre : 'desconocida';
-    alert('Editando detalles de: ' + nombre);
+  // Control del formulario de nueva pizza
+  mostrarFormulario = false;
+
+  toggleFormulario(): void {
+    this.mostrarFormulario = !this.mostrarFormulario;
   }
 
-  eliminarPizza(id: number) {
-    if(confirm('¿Estás seguro de eliminar esta pizza?')) {
-      console.log('Eliminando pizza:', id);
-      // Aquí puedes filtrar el signal para que desaparezca de la vista
-      this.pizzas.set(this.pizzas().filter(p => p.id !== id));
-    }
+  modificarPizza(id: number): void {
+    alert('Modificando pizza: ' + id);
+  }
+
+  eliminarPizza(id: number): void {
+    alert('Eliminando pizza: ' + id);
+  }
+
+  // Formulario de nueva pizza
+  nuevaPizza = {
+    nombre: '',
+    descripcion: '',
+    precioPersonal: 0,
+    precioMediana: 0,
+    precioFamiliar: 0
+  };
+
+  guardarPizza(): void {
+    console.log('Guardando nueva pizza:', this.nuevaPizza);
+    
+    this.pizzaService.crearPizza(this.nuevaPizza).subscribe({
+        next: (res) => {
+            console.log('¡Pizza guardada con éxito!', res);
+            
+            // ✅ CAMBIAMOS EL NOMBRE AQUÍ:
+            // Usamos cargarMenu() porque es la que ya tienes definida arriba
+            this.cargarMenu(); 
+
+            this.mostrarFormulario = false;
+            this.nuevaPizza = { nombre: '', descripcion: '', precioPersonal: 0, precioMediana: 0, precioFamiliar: 0 };
+        },
+        error: (err) => {
+            console.error('Error al guardar la pizza:', err);
+            alert('No se pudo guardar la pizza.');
+        }
+    });
+}
+
+  cancelarFormulario(): void {
+    this.nuevaPizza = { nombre: '', descripcion: '', precioPersonal: 0, precioMediana: 0, precioFamiliar: 0 };
+    this.mostrarFormulario = false;
   }
 }
