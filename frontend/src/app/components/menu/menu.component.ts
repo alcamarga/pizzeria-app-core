@@ -36,11 +36,11 @@ export class MenuComponent implements OnInit {
   private manejarIntencionCompra(): void {
     this.route.queryParams.subscribe(params => {
       const pizzaId = params['agregar'];
-      const tamanoIndice = params['tamano'];
-      if (pizzaId && tamanoIndice !== undefined && this.estaAutenticado()) {
+      const tamanoStr = params['tamano'];
+      if (pizzaId && tamanoStr && this.estaAutenticado()) {
         const pizza = this.pizzas().find(p => p.id === Number(pizzaId));
         if (pizza) {
-          this.cartService.agregarAlCarrito(pizza, Number(tamanoIndice));
+          this.cartService.agregarAlCarrito(pizza, tamanoStr);
           this.mensajeExito.set('¡Pizza agregada al carrito! 🎉');
           this.router.navigate(['/menu'], { replaceUrl: true });
           setTimeout(() => this.mensajeExito.set(null), 3000);
@@ -63,68 +63,70 @@ export class MenuComponent implements OnInit {
     });
   }
 
-  agregarAlCarrito(pizza: Pizza, tamanoIndice: number): void {
+  agregarAlCarrito(pizza: Pizza, tamano: string): void {
     if (!this.estaAutenticado()) {
       this.router.navigate(['/login']);
       return;
     }
-    this.cartService.agregarAlCarrito(pizza, tamanoIndice);
+    this.cartService.agregarAlCarrito(pizza, tamano);
     this.mensajeExito.set(`¡${pizza.nombre} agregada! 🎉`);
     setTimeout(() => this.mensajeExito.set(null), 3000);
   }
 
   // --- NUEVAS FUNCIONES PARA EL ADMIN ---
   irAlDashboard(): void {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/admin/dashboard']);
   }
 
-  // Control del formulario de nueva pizza
+  // Control del formulario de edición
   mostrarFormulario = false;
-
-  toggleFormulario(): void {
-    this.mostrarFormulario = !this.mostrarFormulario;
-  }
-
-  modificarPizza(id: number): void {
-    alert('Modificando pizza: ' + id);
-  }
-
-  eliminarPizza(id: number): void {
-    alert('Eliminando pizza: ' + id);
-  }
-
-  // Formulario de nueva pizza
+  pizzaEnEdicionId: number | null = null;
   nuevaPizza = {
     nombre: '',
     descripcion: '',
-    precioPersonal: 0,
-    precioMediana: 0,
-    precioFamiliar: 0
+    precio_p: 0,
+    precio_m: 0,
+    precio_g: 0
   };
 
-  guardarPizza(): void {
-    console.log('Guardando nueva pizza:', this.nuevaPizza);
-    
-    this.pizzaService.crearPizza(this.nuevaPizza).subscribe({
-        next: (res) => {
-            console.log('¡Pizza guardada con éxito!', res);
-            
-            // ✅ CAMBIAMOS EL NOMBRE AQUÍ:
-            // Usamos cargarMenu() porque es la que ya tienes definida arriba
-            this.cargarMenu(); 
+  toggleFormulario(): void {
+    this.mostrarFormulario = !this.mostrarFormulario;
+    if(!this.mostrarFormulario) this.pizzaEnEdicionId = null;
+  }
 
-            this.mostrarFormulario = false;
-            this.nuevaPizza = { nombre: '', descripcion: '', precioPersonal: 0, precioMediana: 0, precioFamiliar: 0 };
-        },
-        error: (err) => {
-            console.error('Error al guardar la pizza:', err);
-            alert('No se pudo guardar la pizza.');
-        }
-    });
-}
+  modificarPizza(id: number): void {
+    const pizza = this.pizzas().find(p => p.id === id);
+    if(pizza) {
+      this.pizzaEnEdicionId = pizza.id;
+      this.nuevaPizza = { 
+        nombre: pizza.nombre, 
+        descripcion: pizza.descripcion, 
+        precio_p: pizza.precio_p, 
+        precio_m: pizza.precio_m, 
+        precio_g: pizza.precio_g 
+      };
+      this.mostrarFormulario = true;
+    }
+  }
+
+  guardarPizza(): void {
+    if(this.pizzaEnEdicionId) {
+      this.pizzaService.actualizarPizza(this.pizzaEnEdicionId, this.nuevaPizza).subscribe({
+          next: () => {
+              this.cargarMenu(); 
+              this.cancelarFormulario();
+          },
+          error: (err) => {
+              console.error('Error al actualizar la pizza:', err);
+              alert('No se pudo actualizar la pizza.');
+          }
+      });
+    }
+  }
 
   cancelarFormulario(): void {
-    this.nuevaPizza = { nombre: '', descripcion: '', precioPersonal: 0, precioMediana: 0, precioFamiliar: 0 };
+    this.nuevaPizza = { nombre: '', descripcion: '', precio_p: 0, precio_m: 0, precio_g: 0 };
+    this.pizzaEnEdicionId = null;
     this.mostrarFormulario = false;
   }
 }

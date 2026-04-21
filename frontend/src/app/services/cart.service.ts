@@ -29,15 +29,20 @@ export class CartService {
   );
 
   // Agregar una pizza al carrito | Add a pizza to cart
-  agregarAlCarrito(pizza: Pizza, tamanoIndice: number): void {
-    const variante = pizza.variantes[tamanoIndice];
+  agregarAlCarrito(pizza: Pizza, tamano: string): void {
+    let precio = 0;
+    let tamanoId = 0;
+    if (tamano === 'Personal') { precio = pizza.precio_p; tamanoId = 0; }
+    else if (tamano === 'Mediana') { precio = pizza.precio_m; tamanoId = 1; }
+    else if (tamano === 'Familiar') { precio = pizza.precio_g; tamanoId = 2; }
+
     const nuevoArticulo: ArticuloCarrito = {
       pizzaId: pizza.id,
-      tamanoId: tamanoIndice,
+      tamanoId: tamanoId,
       cantidad: 1,
-      precioUnitario: variante.precio,
+      precioUnitario: precio,
       nombre: pizza.nombre,
-      tamano: variante.tamano
+      tamano: tamano
     };
     this.listaArticulos.update(actual => [...actual, nuevoArticulo]);
   }

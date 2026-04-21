@@ -44,8 +44,9 @@
 
       @if (usuarioActual?.rol === 'admin') {
         @if (mostrarFormulario) {
-          <div class="glass-card p-4 mb-4 text-start" style="max-width: 600px; margin: 0 auto 30px;">
-            <h3 class="text-warning fw-bold mb-3">➕ Agregar Nueva Pizza</h3>
+          <div class="menu-form bg-dark bg-opacity-75 p-4 rounded border border-warning shadow-lg text-start mx-auto mt-4" style="max-width: 500px; display: inline-block;">
+            <h3 class="text-warning mb-3">✏️ Editar Pizza</h3>
+            
             <div class="mb-3">
               <label class="form-label text-crema">Nombre</label>
               <input type="text" class="form-control" [(ngModel)]="nuevaPizza.nombre" placeholder="Ej: Pizza Pepperoni">
@@ -56,15 +57,15 @@
             </div>
             <div class="mb-3">
               <label class="form-label text-crema">Precio Personal (6")</label>
-              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precioPersonal" placeholder="Ej: 12000">
+              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precio_p" placeholder="Ej: 12000">
             </div>
             <div class="mb-3">
               <label class="form-label text-crema">Precio Mediana (10")</label>
-              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precioMediana" placeholder="Ej: 18000">
+              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precio_m" placeholder="Ej: 18000">
             </div>
             <div class="mb-3">
               <label class="form-label text-crema">Precio Familiar (14")</label>
-              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precioFamiliar" placeholder="Ej: 25000">
+              <input type="number" class="form-control" [(ngModel)]="nuevaPizza.precio_g" placeholder="Ej: 25000">
             </div>
             <div class="d-flex gap-2">
               <button class="btn btn-warning fw-bold" (click)="guardarPizza()">💾 Guardar</button>
@@ -84,19 +85,29 @@
                 @if (usuarioActual?.rol === 'admin') {
                   <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-outline-info" (click)="modificarPizza(pizza.id)">✏️</button>
-                    <button class="btn btn-sm btn-outline-danger" (click)="eliminarPizza(pizza.id)">🗑️</button>
                   </div>
                 }
               </div>
               <p class="small opacity-75 mb-4">{{ pizza.descripcion }}</p>
-              @for (v of pizza.variantes; track v.tamano; let i = $index) {
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-white bg-opacity-10 border border-white border-opacity-10">
-                  <span class="small">{{ v.tamano }}: <b class="text-warning">${{ v.precio | number }}</b></span>
-                  @if (usuarioActual?.rol !== 'admin') {
-                    <button class="btn btn-warning btn-sm" (click)="agregarAlCarrito(pizza, i)">🛒 Comprar</button>
-                  }
-                </div>
-              }
+              <!-- Opciones de Tamano Independientes | Independent Size Options -->
+              <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-white bg-opacity-10 border border-white border-opacity-10">
+                <span class="small">Personal: <b class="text-warning">${{ pizza.precio_p | number }}</b></span>
+                @if (usuarioActual?.rol !== 'admin') {
+                  <button class="btn btn-warning btn-sm" (click)="agregarAlCarrito(pizza, 'Personal')">🛒 Comprar</button>
+                }
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-white bg-opacity-10 border border-white border-opacity-10">
+                <span class="small">Mediana: <b class="text-warning">${{ pizza.precio_m | number }}</b></span>
+                @if (usuarioActual?.rol !== 'admin') {
+                  <button class="btn btn-warning btn-sm" (click)="agregarAlCarrito(pizza, 'Mediana')">🛒 Comprar</button>
+                }
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-white bg-opacity-10 border border-white border-opacity-10">
+                <span class="small">Familiar: <b class="text-warning">${{ pizza.precio_g | number }}</b></span>
+                @if (usuarioActual?.rol !== 'admin') {
+                  <button class="btn btn-warning btn-sm" (click)="agregarAlCarrito(pizza, 'Familiar')">🛒 Comprar</button>
+                }
+              </div>
             </div>
           </div>
         }

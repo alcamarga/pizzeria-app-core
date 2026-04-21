@@ -14,9 +14,37 @@
       <p class="value">{{ inventarioPizzas }} unidades</p>
     </div>
   </div>
-  <div class="placeholder">
-    <h2>Gráficas de Ventas</h2>
-    <p>Aquí se mostrarán gráficas de las pizzas más vendidas.</p>
-    <div class="chart-placeholder"></div>
+
+  <div class="tabs-container mt-4 mb-3 p-3" style="background: rgba(0,0,0,0.6); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3);">
+    <ul class="nav nav-tabs border-0">
+      <li class="nav-item">
+        <a class="nav-link fw-bold" 
+           [ngClass]="pestanaActiva === 'menu' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
+           (click)="cambiarPestana('menu')" 
+           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+           🍕 Gestión de Menú
+        </a>
+      </li>
+      <li class="nav-item ms-2">
+        <a class="nav-link fw-bold" 
+           [ngClass]="pestanaActiva === 'insumos' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
+           (click)="cambiarPestana('insumos')" 
+           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+           🧀 Inventario de Insumos
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="tab-content">
+    <div *ngIf="pestanaActiva === 'menu'">
+      <!-- Componente para las Pizzas y 3 precios | Pizza catalog component -->
+      <app-dashboard></app-dashboard>
+    </div>
+    
+    <div *ngIf="pestanaActiva === 'insumos'">
+      <!-- Componente para harina, queso, etc. | Supplies inventory component -->
+      <app-inventario></app-inventario>
+    </div>
   </div>
 </div>

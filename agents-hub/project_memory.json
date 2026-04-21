@@ -1,23 +1,22 @@
 {
-  {
-    "last_milestone": "Conexión exitosa entre Angular y Flask para creación de pizzas",
-    "technical_learnings": [
-      "La URL base del API debe ser absoluta (http://localhost:5000/api) para evitar fallos de proxy.",
-      "El endpoint /api/pizzas en Flask requiere explícitamente los métodos ['GET', 'POST'].",
-      "El servicio de Angular debe llamar a cargarMenu() después de un POST exitoso para refrescar los Signals.",
-      "Se implementó una lista PIZZAS_DATOS global en app.py para persistencia temporal en memoria."
-    ],
-    "current_state": "El Dashboard ya permite crear pizzas y verlas reflejadas automáticamente en la tabla.",
-    "pending_tasks": [
-      "Migrar PIZZAS_DATOS de la lista global de Python a la base de datos SQLite real.",
-      "Implementar la lógica de eliminación y edición en el backend."
-    ],
-    
-    "historial_previo": {
-      "estado_del_proyecto": {
-      "ultima_actualizacion": "2026-04-18",
-      "version": "0.5.1-beta",
-      "hito_actual": "Corrección de Estilos de Tabla y Formulario"
+  "last_milestone": "Implementación del Módulo de Inventario y Core de Base de Datos",
+  "technical_learnings": [
+    "La URL base del API debe ser absoluta (http://localhost:5000/api) para evitar fallos de proxy.",
+    "El endpoint /api/pizzas en Flask requiere explícitamente los métodos ['GET', 'POST'].",
+    "El servicio de Angular debe llamar a cargarMenu() después de un POST exitoso para refrescar los Signals.",
+    "Se implementó un modelo Insumo en SQLAlchemy para gestionar existencias (Harina, Queso, Salsa).",
+    "El reset de la base de datos (.db) es necesario al modificar la estructura de los modelos de SQLAlchemy."
+  ],
+  "current_state": "El Backend y Frontend ya gestionan CRUD completo de Pizzas (con precios fijos y SQLite persistente) e inventario de insumos (con alertas de stock y edición in-line). El Dashboard tiene pestañas operativas.",
+  "pending_tasks": [
+    "Proteger el endpoint de creación y edición de pizzas con @requiere_admin.",
+    "Vincular el formulario con la carga de imágenes para las nuevas pizzas."
+  ],
+  "historial_previo": {
+    "estado_del_proyecto": {
+      "ultima_actualizacion": "2026-04-21",
+      "version": "0.7.0-beta",
+      "hito_actual": "Interactividad Admin UI, Borrado/Edición de Items y Persistencia"
     },
     "errores_criticos_resueltos": [
       {
@@ -27,36 +26,22 @@
         "fecha_fijacion": "2026-04-18"
       },
       {
+        "id": "DB-INIT-001",
+        "problema": "La base de datos SQLite no cargaba los insumos iniciales por conflictos en el app_context.",
+        "solucion": "Se reestructuró el bloque with app.app_context() en app.py y se forzó la creación de datos semilla tras un reset del archivo .db.",
+        "fecha_fijacion": "2026-04-20"
+      },
+      {
         "id": "DASHBOARD-UI-001",
         "problema": "Tabla del Dashboard con fondo blanco inconsistente con el tema oscuro.",
         "solucion": "Se reemplazó el fondo blanco por un contenedor oscuro traslúcido (rgba 0,0,0,0.8), bordes dorados y texto crema.",
         "fecha_fijacion": "2026-04-18"
-      },
-      {
-        "id": "MENU-FORM-001",
-        "problema": "El botón de Agregar Pizza usaba un prompt del navegador en lugar de un formulario integrado.",
-        "solucion": "Se implementó un formulario HTML con ngModel para Nombre, Descripción y 3 Precios. El formulario ahora es visible solo al activar la acción.",
-        "fecha_fijacion": "2026-04-18"
-      },
-      {
-        "id": "DASHBOARD-TABLE-VISIBILITY",
-        "problema": "Filas de tabla invisibles (solo visibles en hover) y formulario de Agregar Pizza no permitía escribir.",
-        "solucion": "Se aplicó color crema (#f5f5dc) permanente a todas las celdas con !important, fondo transparente, y inputs con rgba(255,255,255,0.1) + borde dorado para alto contraste.",
-        "fecha_fijacion": "2026-04-18"
       }
     ],
     "reglas_activas_resumen": {
-      "idioma": "Español estricto para funciones (cerrarSesion, obtenerPizzas)",
+      "idioma": "Español estricto para funciones (cerrarSesion, obtenerPizzas, getInsumos)",
       "tema_ui": "Crema/Dorado sobre transparencia oscura (rgba 0,0,0,0.8)",
       "convencion_nombres": "CamelCase para TS, kebab-case para CSS/HTML"
-    },
-    "tareas_pendientes": [
-      "Migrar PIZZAS_DATOS de la lista global de Python a la base de datos SQLite real.",
-      "Implementar la lógica de eliminación y edición en el backend vinculando los botones del Dashboard.",
-      "Proteger el endpoint de creación de pizzas con @requiere_admin.",
-      "Vincular el formulario con la carga de imágenes para las nuevas pizzas."
-    ]
     }
   }
-  
-  }
+}
