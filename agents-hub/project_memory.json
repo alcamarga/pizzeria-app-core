@@ -1,46 +1,41 @@
 {
-  "last_milestone": "Implementación del Módulo de Inventario y Core de Base de Datos",
+  "last_milestone": "Implementación de Sistema de Carrito Reactivo y Resumen de Pedido",
   "technical_learnings": [
     "La URL base del API debe ser absoluta (http://localhost:5000/api) para evitar fallos de proxy.",
     "El endpoint /api/pizzas en Flask requiere explícitamente los métodos ['GET', 'POST'].",
-    "El servicio de Angular debe llamar a cargarMenu() después de un POST exitoso para refrescar los Signals.",
-    "Se implementó un modelo Insumo en SQLAlchemy para gestionar existencias (Harina, Queso, Salsa).",
-    "El reset de la base de datos (.db) es necesario al modificar la estructura de los modelos de SQLAlchemy."
+    "Uso de Angular Signals para gestionar el estado global del carrito con persistencia automática vía effects y localStorage.",
+    "Importancia de la limpieza de archivos para evitar errores de 'Duplicate identifier' al concatenar código por error.",
+    "Se implementó un modelo Insumo en SQLAlchemy para gestionar existencias (Harina, Queso, Salsa)."
   ],
-  "current_state": "El Backend y Frontend ya gestionan CRUD completo de Pizzas (con precios fijos y SQLite persistente) e inventario de insumos (con alertas de stock y edición in-line). El Dashboard tiene pestañas operativas.",
+  "current_state": "Frontend cuenta con un sistema de carrito funcional y persistente. El MenuComponent permite añadir productos con feedback visual ('¡Agregado!') y el nuevo ResumenPedido permite gestionar cantidades y confirmar la orden.",
   "pending_tasks": [
     "Proteger el endpoint de creación y edición de pizzas con @requiere_admin.",
-    "Vincular el formulario con la carga de imágenes para las nuevas pizzas."
+    "Vincular el formulario con la carga de imágenes para las nuevas pizzas.",
+    "Implementar el procesamiento real del pedido en el backend (crear tabla de Pedidos)."
   ],
   "historial_previo": {
     "estado_del_proyecto": {
       "ultima_actualizacion": "2026-04-21",
-      "version": "0.7.0-beta",
-      "hito_actual": "Interactividad Admin UI, Borrado/Edición de Items y Persistencia"
+      "version": "0.8.0-beta",
+      "hito_actual": "Carrito Reactivo (Signals), UI Feedback y Resumen de Pedido Premium"
     },
     "errores_criticos_resueltos": [
+      {
+        "id": "TS-DUP-CART",
+        "problema": "Errores de compilación 'Duplicate identifier CartService' y 'Multiple exports' por código duplicado en cart.service.ts.",
+        "solucion": "Se limpió y reescribió el servicio consolidando una única clase limpia con la lógica de Signals y persistencia.",
+        "fecha_fijacion": "2026-04-21"
+      },
       {
         "id": "TS2339-AUTH",
         "problema": "La propiedad cerrarSesion no existía en AuthService",
         "solucion": "Se unificaron todas las llamadas de cierre de sesión a 'cerrarSesion' en el Servicio, Interceptor y MenuComponent.",
         "fecha_fijacion": "2026-04-18"
-      },
-      {
-        "id": "DB-INIT-001",
-        "problema": "La base de datos SQLite no cargaba los insumos iniciales por conflictos en el app_context.",
-        "solucion": "Se reestructuró el bloque with app.app_context() en app.py y se forzó la creación de datos semilla tras un reset del archivo .db.",
-        "fecha_fijacion": "2026-04-20"
-      },
-      {
-        "id": "DASHBOARD-UI-001",
-        "problema": "Tabla del Dashboard con fondo blanco inconsistente con el tema oscuro.",
-        "solucion": "Se reemplazó el fondo blanco por un contenedor oscuro traslúcido (rgba 0,0,0,0.8), bordes dorados y texto crema.",
-        "fecha_fijacion": "2026-04-18"
       }
     ],
     "reglas_activas_resumen": {
-      "idioma": "Español estricto para funciones (cerrarSesion, obtenerPizzas, getInsumos)",
-      "tema_ui": "Crema/Dorado sobre transparencia oscura (rgba 0,0,0,0.8)",
+      "idioma": "Español estricto para funciones (cerrarSesion, obtenerPizzas, agregarAlCarrito)",
+      "tema_ui": "Crema/Dorado/Verde sobre transparencia oscura (Glassmorphism)",
       "convencion_nombres": "CamelCase para TS, kebab-case para CSS/HTML"
     }
   }

@@ -1,12 +1,12 @@
 // Servicio compartido para el estado del carrito usando Signals.
-// Autor: Camilo Martinez | Fecha: 23/03/2026 | Versión: 1.0
+// Autor: Camilo Martínez | Fecha: 23/03/2026 | Versión: 1.7
 
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 import { Pizza } from '../models/pizza.model';
 
 export interface ArticuloCarrito {
   pizzaId: number;
-  tamanoId: number;
+  tamanoId: number; // Mantener por compatibilidad futura
   cantidad: number;
   precioUnitario: number;
   nombre: string;
@@ -15,65 +15,81 @@ export interface ArticuloCarrito {
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
-  // Lista de artículos en el carrito | List of items in cart
-  listaArticulos = signal<ArticuloCarrito[]>([]);
+  // Señal interna que almacena los artículos del carrito
+  private _items = signal<ArticuloCarrito[]>(this.cargarDesdeStorage());
 
-  // Total de artículos (cantidad acumulada) | Total items (accumulated quantity)
-  totalArticulos = computed(() =>
-    this.listaArticulos().reduce((acc, a) => acc + a.cantidad, 0)
+  // Exposición solo lectura de la señal
+  public readonly items = this._items.asReadonly();
+
+  // Total de artículos (suma de cantidades)
+  public readonly totalArticulos = computed(() =>
+    this._items().reduce((acc, a) => acc + a.cantidad, 0)
   );
 
-  // Precio total del carrito | Cart total price
-  totalCarrito = computed(() =>
-    this.listaArticulos().reduce((acc, a) => acc + a.precioUnitario * a.cantidad, 0)
+  // Precio total del carrito
+  public readonly totalCarrito = computed(() =>
+    this._items().reduce((acc, a) => acc + a.precioUnitario * a.cantidad, 0)
   );
 
-  // Agregar una pizza al carrito | Add a pizza to cart
-  agregarAlCarrito(pizza: Pizza, tamano: string): void {
-    let precio = 0;
-    let tamanoId = 0;
-    if (tamano === 'Personal') { precio = pizza.precio_p; tamanoId = 0; }
-    else if (tamano === 'Mediana') { precio = pizza.precio_m; tamanoId = 1; }
-    else if (tamano === 'Familiar') { precio = pizza.precio_g; tamanoId = 2; }
-
-    const nuevoArticulo: ArticuloCarrito = {
-      pizzaId: pizza.id,
-      tamanoId: tamanoId,
-      cantidad: 1,
-      precioUnitario: precio,
-      nombre: pizza.nombre,
-      tamano: tamano
-    };
-    this.listaArticulos.update(actual => [...actual, nuevoArticulo]);
+  constructor() {
+    // Sincronizar cambios con localStorage
+    effect(() => {
+      const datos = this._items();
+      localStorage.setItem('carrito', JSON.stringify(datos));
+    });
   }
 
-  // Quitar un artículo del carrito | Remove an item from cart
+  private cargarDesdeStorage(): ArticuloCarrito[] {
+    const json = localStorage.getItem('carrito');
+    return json ? JSON.parse(json) : [];
+  }
+
+  /** Añade un producto al carrito.
+   * Si ya existe una fila con el mismo pizzaId y tamaño, incrementa la cantidad.
+   */
+  agregarAlCarrito(pizza: Pizza, tamanoLabel: string, precioExacto: number): void {
+    this._items.update(actual => {
+      const indice = actual.findIndex(a => a.pizzaId === pizza.id && a.tamano === tamanoLabel);
+      if (indice !== -1) {
+        const articulo = actual[indice];
+        const actualizado = { ...articulo, cantidad: articulo.cantidad + 1 };
+        return [...actual.slice(0, indice), actualizado, ...actual.slice(indice + 1)];
+      }
+      const nuevo: ArticuloCarrito = {
+        pizzaId: pizza.id,
+        tamanoId: 0,
+        cantidad: 1,
+        precioUnitario: precioExacto,
+        nombre: pizza.nombre,
+        tamano: tamanoLabel
+      };
+      return [...actual, nuevo];
+    });
+  }
+
+  /** Elimina un artículo por su índice en la lista. */
   quitarArticulo(indice: number): void {
-    this.listaArticulos.update(actual => actual.filter((_, i) => i !== indice));
+    this._items.update(actual => actual.filter((_, i) => i !== indice));
   }
 
-  // Aumentar cantidad de un artículo | Increase item quantity
+  /** Incrementa la cantidad de un artículo. */
   aumentarCantidad(indice: number): void {
-    this.listaArticulos.update(actual =>
-      actual.map((item, i) =>
-        i === indice ? { ...item, cantidad: item.cantidad + 1 } : item
-      )
+    this._items.update(actual =>
+      actual.map((item, i) => i === indice ? { ...item, cantidad: item.cantidad + 1 } : item)
     );
   }
 
-  // Disminuir cantidad de un artículo | Decrease item quantity
+  /** Decrementa la cantidad y elimina el artículo si llega a 0. */
   disminuirCantidad(indice: number): void {
-    this.listaArticulos.update(actual =>
+    this._items.update(actual =>
       actual
-        .map((item, i) =>
-          i === indice ? { ...item, cantidad: item.cantidad - 1 } : item
-        )
+        .map((item, i) => i === indice ? { ...item, cantidad: item.cantidad - 1 } : item)
         .filter(item => item.cantidad > 0)
     );
   }
 
-  // Vaciar el carrito | Empty cart
+  /** Vacía todo el carrito. */
   vaciarCarrito(): void {
-    this.listaArticulos.set([]);
+    this._items.set([]);
   }
 }

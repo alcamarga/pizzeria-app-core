@@ -4,6 +4,7 @@ import { RegistroComponent } from './components/registro/registro.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { MenuComponent } from './components/menu/menu.component';
 import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
+import { ResumenPedidoComponent } from './components/resumen-pedido/resumen-pedido.component';
 import { AdminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
@@ -20,6 +21,8 @@ export const routes: Routes = [
   
   // 4. Ruta protegida (requiere login) - dashboard de usuario
   { path: 'dashboard', component: DashboardComponent },
+  { path: 'resumen', component: ResumenPedidoComponent },
+
   
   // 5. Comodín por si escriben cualquier cosa
   { path: '**', redirectTo: '' }

@@ -79,9 +79,10 @@ class Pizza(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nombre = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.String(255), nullable=True)
-    precio_p = db.Column(db.Float, nullable=False, default=0.0)
-    precio_m = db.Column(db.Float, nullable=False, default=0.0)
-    precio_g = db.Column(db.Float, nullable=False, default=0.0)
+    categoria = db.Column(db.String(50), nullable=False, default='Pizza')
+    precio_1 = db.Column(db.Float, nullable=False, default=0.0)
+    precio_2 = db.Column(db.Float, nullable=True, default=0.0)
+    precio_3 = db.Column(db.Float, nullable=True, default=0.0)
     activo = db.Column(db.Boolean, default=True)
 
     def to_dict(self):
@@ -89,9 +90,10 @@ class Pizza(db.Model):
             "id": self.id,
             "nombre": self.nombre,
             "descripcion": self.descripcion,
-            "precio_p": self.precio_p,
-            "precio_m": self.precio_m,
-            "precio_g": self.precio_g,
+            "categoria": self.categoria,
+            "precio_1": self.precio_1,
+            "precio_2": self.precio_2,
+            "precio_3": self.precio_3,
             "activo": self.activo
         }
 
@@ -185,13 +187,15 @@ with app.app_context():
     # Pizzas por defecto
     if not Pizza.query.first():
         pizzas_seed = [
-            Pizza(nombre="Hawaiana", descripcion="Piña y jamón", precio_p=20000, precio_m=30000, precio_g=40000),
-            Pizza(nombre="Pepperoni", descripcion="Pepperoni clásico", precio_p=22000, precio_m=32000, precio_g=42000),
-            Pizza(nombre="Vegetariana", descripcion="Vegetales frescos", precio_p=21000, precio_m=31000, precio_g=41000)
+            Pizza(nombre="Hawaiana", descripcion="Piña y jamón", categoria="Pizza", precio_1=20000, precio_2=30000, precio_3=40000),
+            Pizza(nombre="Pepperoni", descripcion="Pepperoni clásico", categoria="Pizza", precio_1=22000, precio_2=32000, precio_3=42000),
+            Pizza(nombre="Coca Cola", descripcion="Gaseosa refrescante", categoria="Gaseosa", precio_1=5000, precio_2=8000, precio_3=12000),
+            Pizza(nombre="Lasaña de Carne", descripcion="Tradicional italiana", categoria="Lasaña", precio_1=25000, precio_2=35000, precio_3=None),
+            Pizza(nombre="Palitos de Ajo", descripcion="Orden de 6 unidades", categoria="Otros", precio_1=15000, precio_2=None, precio_3=None)
         ]
         db.session.add_all(pizzas_seed)
         db.session.commit()
-        print("[INFO] Pizzas iniciales creadas")
+        print("[INFO] Productos iniciales creados")
 
 # --- RUTAS API ---
 @app.route("/api/auth/registro", methods=["POST"])
@@ -217,9 +221,10 @@ def gestionar_pizzas():
         nueva = Pizza(
             nombre=datos.get('nombre'),
             descripcion=datos.get('descripcion'),
-            precio_p=float(datos.get('precio_p', 0.0)),
-            precio_m=float(datos.get('precio_m', 0.0)),
-            precio_g=float(datos.get('precio_g', 0.0))
+            categoria=datos.get('categoria', 'Pizza'),
+            precio_1=float(datos.get('precio_1', 0.0) or 0),
+            precio_2=float(datos.get('precio_2') or 0) if datos.get('precio_2') else None,
+            precio_3=float(datos.get('precio_3') or 0) if datos.get('precio_3') else None
         )
         db.session.add(nueva)
         db.session.commit()
@@ -241,9 +246,10 @@ def actualizar_pizza(id):
     datos = request.get_json() or {}
     if 'nombre' in datos: pizza.nombre = datos['nombre']
     if 'descripcion' in datos: pizza.descripcion = datos['descripcion']
-    if 'precio_p' in datos: pizza.precio_p = float(datos['precio_p'])
-    if 'precio_m' in datos: pizza.precio_m = float(datos['precio_m'])
-    if 'precio_g' in datos: pizza.precio_g = float(datos['precio_g'])
+    if 'categoria' in datos: pizza.categoria = datos['categoria']
+    if 'precio_1' in datos: pizza.precio_1 = float(datos['precio_1']) if datos['precio_1'] else None
+    if 'precio_2' in datos: pizza.precio_2 = float(datos['precio_2']) if datos['precio_2'] else None
+    if 'precio_3' in datos: pizza.precio_3 = float(datos['precio_3']) if datos['precio_3'] else None
     if 'activo' in datos: pizza.activo = bool(datos['activo'])
     db.session.commit()
     return jsonify({"status": "ok", "pizza": pizza.to_dict()})

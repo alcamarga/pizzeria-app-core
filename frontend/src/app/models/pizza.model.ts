@@ -5,9 +5,10 @@ export interface Pizza {
   id: number;
   nombre: string;
   descripcion: string;
-  precio_p: number; // Precio Personal | Personal Price
-  precio_m: number; // Precio Mediana | Medium Price
-  precio_g: number; // Precio Familiar | Family Price
+  categoria: string;
+  precio_1: number;
+  precio_2?: number;
+  precio_3?: number;
   imagen?: string;
   activo: boolean;
 }

@@ -60,7 +60,25 @@ export class DashboardComponent implements OnInit {
 
   // --- FORMULARIO NUEVA PIZZA ---
   mostrarFormulario = false;
-  nuevaPizza = { nombre: '', descripcion: '', precio_p: 0, precio_m: 0, precio_g: 0 };
+  categoriasPosibles = ['Pizza', 'Gaseosa', 'Lasaña', 'Otros'];
+  nuevaPizza: any = { nombre: '', descripcion: '', categoria: 'Pizza', precio_1: 0, precio_2: 0, precio_3: 0 };
+
+  // Retorna las etiquetas dinámicas según categoría
+  getEtiquetaPrecio(index: number): string {
+    const cat = this.nuevaPizza.categoria;
+    if (cat === 'Pizza') return ['Personal', 'Mediana', 'Familiar'][index - 1];
+    if (cat === 'Gaseosa') return ['Personal', 'Litro', 'Familiar'][index - 1];
+    if (cat === 'Lasaña') return ['Pequeña', 'Grande'][index - 1];
+    return 'Único';
+  }
+
+  // Define visualmente si ocultamos el campo
+  mostrarCampoPrecio(index: number): boolean {
+    const cat = this.nuevaPizza.categoria;
+    if (cat === 'Otros') return index === 1; // Solo 1 precio libre
+    if (cat === 'Lasaña') return index <= 2; // Solo pequeña y grande
+    return true; // Pizza y Gaseosa usan 3
+  }
 
   toggleFormulario(): void {
     this.mostrarFormulario = !this.mostrarFormulario;
@@ -84,7 +102,7 @@ export class DashboardComponent implements OnInit {
   }
 
   cancelarFormulario(): void {
-    this.nuevaPizza = { nombre: '', descripcion: '', precio_p: 0, precio_m: 0, precio_g: 0 };
+    this.nuevaPizza = { nombre: '', descripcion: '', categoria: 'Pizza', precio_1: 0, precio_2: 0, precio_3: 0 };
     this.mostrarFormulario = false;
   }
 

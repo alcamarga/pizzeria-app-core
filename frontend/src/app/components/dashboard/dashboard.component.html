@@ -55,9 +55,10 @@
                 <th class="text-warning">ID</th>
                 <th class="text-warning">Nombre del Producto</th>
                 <th class="text-warning">Descripción</th>
-                <th class="text-warning text-center">Precio Personal</th>
-                <th class="text-warning text-center">Precio Mediana</th>
-                <th class="text-warning text-center">Precio Familiar</th>
+                <th class="text-warning">Categoría</th>
+                <th class="text-warning text-center">Precio 1</th>
+                <th class="text-warning text-center">Precio 2</th>
+                <th class="text-warning text-center">Precio 3</th>
                 <th class="text-warning text-center">Acciones</th>
               </tr>
             </thead>
@@ -71,14 +72,17 @@
                   <td class="text-white">
                     {{ p.descripcion }}
                   </td>
+                  <td class="text-white">
+                    <span class="badge bg-secondary">{{ p.categoria }}</span>
+                  </td>
                   <td class="text-info text-center fw-bold">
-                    ${{ p.precio_p | number:'1.0-0' }}
+                    <span *ngIf="p.precio_1">${{ p.precio_1 | number:'1.0-0' }}</span>
                   </td>
                   <td class="text-success text-center fw-bold">
-                    ${{ p.precio_m | number:'1.0-0' }}
+                    <span *ngIf="p.precio_2">${{ p.precio_2 | number:'1.0-0' }}</span>
                   </td>
                   <td class="text-warning text-center fw-bold">
-                    ${{ p.precio_g | number:'1.0-0' }}
+                    <span *ngIf="p.precio_3">${{ p.precio_3 | number:'1.0-0' }}</span>
                   </td>
                   <td class="text-center">
                     <button class="btn btn-sm btn-outline-danger" (click)="eliminarPizza(p.id)">🗑️ Filtrar/Borrar</button>
@@ -94,31 +98,40 @@
           <button class="btn btn-warning fw-bold mb-3" (click)="toggleFormulario()" *ngIf="!mostrarFormulario">➕ Agregar Producto</button>
           
           <div class="card p-3 border-warning bg-dark" *ngIf="mostrarFormulario" style="max-width: 800px; border-radius: 8px;">
-            <h5 class="text-crema mb-3">Registrar Nueva Pizza</h5>
+            <h5 class="text-crema mb-3">Registrar Nuevo Producto</h5>
             <div class="row g-2 align-items-end">
               <div class="col-md-3">
                 <label class="form-label text-white small mb-1">Nombre</label>
                 <input class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Ej: Hawaiana" [(ngModel)]="nuevaPizza.nombre">
               </div>
-              <div class="col-md-9">
+              <div class="col-md-6">
                 <label class="form-label text-white small mb-1">Descripción</label>
                 <input class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.descripcion" placeholder="Ingredientes detallados">
               </div>
               <div class="col-md-3">
-                <label class="form-label text-white small mb-1">Precio Personal</label>
-                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.precio_p" placeholder="Ej: 8000">
+                <label class="form-label text-white small mb-1">Categoría</label>
+                <select class="form-select form-select-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.categoria">
+                  <option *ngFor="let cat of categoriasPosibles" [value]="cat">{{cat}}</option>
+                </select>
               </div>
-              <div class="col-md-3">
-                <label class="form-label text-white small mb-1">Precio Mediana</label>
-                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.precio_m" placeholder="Ej: 14000">
+              
+              <!-- Precios dinámicos -->
+              <div class="col-md-3" *ngIf="mostrarCampoPrecio(1)">
+                <label class="form-label text-warning small mb-1">{{ getEtiquetaPrecio(1) }}</label>
+                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.precio_1" placeholder="$">
               </div>
-              <div class="col-md-3">
-                <label class="form-label text-white small mb-1">Precio Familiar</label>
-                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.precio_g" placeholder="Ej: 21000">
+              <div class="col-md-3" *ngIf="mostrarCampoPrecio(2)">
+                <label class="form-label text-warning small mb-1">{{ getEtiquetaPrecio(2) }}</label>
+                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.precio_2" placeholder="$">
               </div>
-              <div class="col-md-3 d-flex gap-2">
+              <div class="col-md-3" *ngIf="mostrarCampoPrecio(3)">
+                <label class="form-label text-warning small mb-1">{{ getEtiquetaPrecio(3) }}</label>
+                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.precio_3" placeholder="$">
+              </div>
+              
+              <div class="col-md-3 d-flex gap-2 ms-auto mt-3">
                 <button class="btn btn-sm btn-success fw-bold w-100" (click)="guardarPizza()">Guardar</button>
-                <button class="btn btn-sm btn-outline-light w-100" (click)="cancelarFormulario()">X</button>
+                <button class="btn btn-sm btn-outline-light w-100" (click)="cancelarFormulario()">Cancelar</button>
               </div>
             </div>
           </div>
