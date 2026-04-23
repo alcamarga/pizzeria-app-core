@@ -39,26 +39,49 @@ class Pedido(db.Model):
     subtotal = db.Column(db.Float, nullable=False, default=0.0)
     iva = db.Column(db.Float, nullable=False, default=0.0)
     total = db.Column(db.Float, nullable=False, default=0.0)
+    estado = db.Column(db.String(50), nullable=False, default="Pendiente")
     articulos = db.relationship("ItemPedido", backref="pedido_relacionado", lazy=True, cascade="all, delete-orphan")
 
     def serializar(self) -> Dict[str, Any]:
         return {
             "id": self.id, "usuario_id": self.usuario_id, "fecha_hora": self.fecha_hora,
             "articulos": [a.serializar() for a in self.articulos],
-            "subtotal": round(self.subtotal, 2), "iva": round(self.iva, 2), "total": round(self.total, 2)
+            "subtotal": round(self.subtotal, 2), "iva": round(self.iva, 2), "total": round(self.total, 2),
+            "estado": self.estado
         }
 
 class ItemPedido(db.Model):
     __tablename__ = "items_pedido"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     pedido_id = db.Column(db.Integer, db.ForeignKey("pedidos.id"), nullable=False)
+    pizza_id = db.Column(db.Integer, db.ForeignKey("pizzas.id"), nullable=True) # Nuevo vínculo
     nombre = db.Column(db.String(100), nullable=False)
     tamano = db.Column(db.String(50), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False, default=1)
     precio = db.Column(db.Float, nullable=False, default=0.0)
 
     def serializar(self) -> Dict[str, Any]:
-        return {"nombre": self.nombre, "tamano": self.tamano, "cantidad": self.cantidad, "precio": self.precio}
+        return {"id": self.id, "pizza_id": self.pizza_id, "nombre": self.nombre, "tamano": self.tamano, "cantidad": self.cantidad, "precio": self.precio}
+
+class Receta(db.Model):
+    __tablename__ = 'recetas'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    pizza_id = db.Column(db.Integer, db.ForeignKey('pizzas.id'), nullable=False)
+    insumo_id = db.Column(db.Integer, db.ForeignKey('insumos.id'), nullable=False)
+    cantidad_gastada = db.Column(db.Float, nullable=False, default=0.0)
+    
+    # Relaciones para facilitar consultas
+    insumo = db.relationship("Insumo", backref="recetas_donde_participa")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "pizza_id": self.pizza_id,
+            "insumo_id": self.insumo_id,
+            "insumo_nombre": self.insumo.nombre if self.insumo else "Desconocido",
+            "cantidad_gastada": self.cantidad_gastada,
+            "unidad_medida": self.insumo.unidad_medida if self.insumo else ""
+        }
 
 class Insumo(db.Model):
     __tablename__ = 'insumos'
@@ -164,6 +187,15 @@ with app.app_context():
             if "usuario_id" not in columnas:
                 conn.exec_driver_sql("ALTER TABLE pedidos ADD COLUMN usuario_id INTEGER;")
                 print("[INFO] Migracion aplicada: pedidos.usuario_id")
+            if "estado" not in columnas:
+                conn.exec_driver_sql("ALTER TABLE pedidos ADD COLUMN estado VARCHAR(50) DEFAULT 'Pendiente';")
+                print("[INFO] Migracion aplicada: pedidos.estado")
+            
+            # Migracion ItemPedido.pizza_id
+            columnas_items = [fila[1] for fila in conn.exec_driver_sql("PRAGMA table_info(items_pedido);").fetchall()]
+            if "pizza_id" not in columnas_items:
+                conn.exec_driver_sql("ALTER TABLE items_pedido ADD COLUMN pizza_id INTEGER;")
+                print("[INFO] Migracion aplicada: items_pedido.pizza_id")
     except Exception as exc: print(f"[WARN] No se pudo verificar migracion: {exc}")
 
     # Admin por defecto
@@ -196,6 +228,37 @@ with app.app_context():
         db.session.add_all(pizzas_seed)
         db.session.commit()
         print("[INFO] Productos iniciales creados")
+
+    # Recetas por defecto (Masa, Salsa, Queso)
+    if not Receta.query.first():
+        masa = Insumo.query.filter_by(nombre="Masa").first()
+        if not masa:
+            masa = Insumo(nombre="Masa", cantidad_actual=100.0, unidad_medida="unidades", stock_minimo=10.0)
+            db.session.add(masa); db.session.commit()
+        
+        # Corregir o crear Salsa y Queso con nuevas unidades
+        salsa = Insumo.query.filter_by(nombre="Salsa de Tomate").first()
+        if salsa: salsa.unidad_medida = "ml"
+        else:
+            salsa = Insumo(nombre="Salsa de Tomate", cantidad_actual=5000.0, unidad_medida="ml", stock_minimo=500.0)
+            db.session.add(salsa)
+            
+        queso = Insumo.query.filter_by(nombre="Queso Mozzarella").first()
+        if queso: queso.unidad_medida = "gr"
+        else:
+            queso = Insumo(nombre="Queso Mozzarella", cantidad_actual=10000.0, unidad_medida="gr", stock_minimo=1000.0)
+            db.session.add(queso)
+        
+        db.session.commit()
+        
+        todas_pizzas = Pizza.query.all()
+        for p in todas_pizzas:
+            db.session.add(Receta(pizza_id=p.id, insumo_id=masa.id, cantidad_gastada=1.0))
+            db.session.add(Receta(pizza_id=p.id, insumo_id=salsa.id, cantidad_gastada=60.0))
+            db.session.add(Receta(pizza_id=p.id, insumo_id=queso.id, cantidad_gastada=200.0))
+        
+        db.session.commit()
+        print("[INFO] Recetas iniciales creadas con unidades métricas (gr/ml)")
 
 # --- RUTAS API ---
 @app.route("/api/auth/registro", methods=["POST"])
@@ -285,6 +348,115 @@ def delete_insumo(id):
     db.session.delete(insumo)
     db.session.commit()
     return jsonify({"status": "ok", "mensaje": "Insumo eliminado."})
+
+@app.route("/api/pedidos", methods=["POST"])
+def crear_pedido():
+    datos = request.get_json() or {}
+    try:
+        # Extraer datos básicos
+        usuario_id = datos.get("usuario_id")
+        subtotal = float(datos.get("subtotal", 0.0))
+        iva = float(datos.get("iva", 0.0))
+        total = float(datos.get("total", 0.0))
+        fecha_hora = datos.get("fecha_hora") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Crear instancia de Pedido
+        nuevo_pedido = Pedido(
+            usuario_id=usuario_id,
+            subtotal=subtotal,
+            iva=iva,
+            total=total,
+            fecha_hora=fecha_hora
+        )
+        db.session.add(nuevo_pedido)
+        db.session.flush() # Para obtener el ID del pedido antes del commit
+
+        # Agregar items del pedido
+        articulos = datos.get("articulos", [])
+        for item in articulos:
+            nuevo_item = ItemPedido(
+                pedido_id=nuevo_pedido.id,
+                pizza_id=item.get("pizza_id"), # Capturamos el ID del catalogo
+                nombre=item.get("nombre"),
+                tamano=item.get("tamano"),
+                cantidad=int(item.get("cantidad", 1)),
+                precio=float(item.get("precio", 0.0))
+            )
+            db.session.add(nuevo_item)
+
+        db.session.commit()
+        return jsonify({"status": "ok", "mensaje": "Pedido guardado con éxito", "pedido_id": nuevo_pedido.id}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"[ERROR] Error al guardar pedido: {e}")
+        return jsonify({"status": "error", "mensaje": str(e)}), 500
+
+@app.route("/api/pedidos", methods=["GET"])
+@requiere_autenticacion
+def listar_pedidos():
+    usuario_id_token = g.jwt.get("sub")
+    rol = g.jwt.get("rol")
+
+    if rol == "admin":
+        # Si es admin, puede ver todos o filtrar por usuario_id
+        u_id = request.args.get("usuario_id")
+        if u_id:
+            pedidos = Pedido.query.filter_by(usuario_id=u_id).order_by(Pedido.id.desc()).all()
+        else:
+            pedidos = Pedido.query.order_by(Pedido.id.desc()).all()
+    else:
+        # Si es cliente, solo sus pedidos
+        pedidos = Pedido.query.filter_by(usuario_id=usuario_id_token).order_by(Pedido.id.desc()).all()
+    
+    return jsonify({"pedidos": [p.serializar() for p in pedidos]})
+
+@app.route("/api/pedidos/<int:id>/estado", methods=["PATCH"])
+@requiere_admin
+def actualizar_estado_pedido(id):
+    pedido = Pedido.query.get_or_404(id)
+    datos = request.get_json() or {}
+    nuevo_estado = datos.get("estado")
+    
+    if not nuevo_estado:
+        return jsonify({"error": "El campo 'estado' es requerido"}), 400
+    
+    # Lógica de descuento de inventario
+    if nuevo_estado == "Preparando" and pedido.estado != "Preparando":
+        for item in pedido.articulos:
+            if item.pizza_id:
+                recetas = Receta.query.filter_by(pizza_id=item.pizza_id).all()
+                for r in recetas:
+                    insumo = Insumo.query.get(r.insumo_id)
+                    if insumo:
+                        insumo.cantidad_actual -= (r.cantidad_gastada * item.cantidad)
+                        print(f"[INFO] Inventario descontado: {insumo.nombre} (-{r.cantidad_gastada * item.cantidad})")
+
+    pedido.estado = nuevo_estado
+    db.session.commit()
+    return jsonify({"status": "ok", "mensaje": f"Estado actualizado a {nuevo_estado}", "pedido": pedido.serializar()}), 200
+
+@app.route("/api/pizzas/<int:id>/receta", methods=["GET", "POST"])
+@requiere_admin
+def gestionar_receta(id):
+    if request.method == "POST":
+        datos = request.get_json() or []
+        # Limpiar receta actual
+        Receta.query.filter_by(pizza_id=id).delete()
+        
+        for item in datos:
+            nueva = Receta(
+                pizza_id=id,
+                insumo_id=item.get("insumo_id"),
+                cantidad_gastada=float(item.get("cantidad_gastada", 0))
+            )
+            db.session.add(nueva)
+        
+        db.session.commit()
+        return jsonify({"status": "ok", "mensaje": "Receta actualizada"})
+    
+    recetas = Receta.query.filter_by(pizza_id=id).all()
+    return jsonify({"receta": [r.to_dict() for r in recetas]})
 
 @app.route("/api/health", methods=["GET"])
 def estado_servidor(): return jsonify({"status": "ok"})

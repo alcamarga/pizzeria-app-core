@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CartService } from '../../services/cart.service';
+import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -12,6 +13,7 @@ import { Router } from '@angular/router';
 })
 export class ResumenPedidoComponent {
   cartService = inject(CartService);
+  authService = inject(AuthService);
   router = inject(Router);
 
   // Acceso directo a los items reactivos
@@ -38,9 +40,30 @@ export class ResumenPedidoComponent {
   }
 
   confirmarPedido() {
-    alert('🚀 Pedido enviado con éxito. ¡En camino a tu mesa!');
-    this.cartService.vaciarCarrito();
-    this.router.navigate(['/menu']);
+    const usuario = this.authService.obtenerUsuarioActual();
+    
+    if (!usuario) {
+      alert('Debes iniciar sesión para confirmar el pedido.');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    if (this.items().length === 0) {
+      alert('Tu carrito está vacío.');
+      return;
+    }
+
+    this.cartService.confirmarPedido(usuario.id).subscribe({
+      next: (res: any) => {
+        alert('✅ ¡Pedido recibido con éxito! Pronto estará en tu mesa.');
+        this.cartService.vaciarCarrito();
+        this.router.navigate(['/menu']);
+      },
+      error: (err) => {
+        console.error('Error al confirmar pedido:', err);
+        alert('❌ Hubo un problema al procesar tu pedido. Por favor, intenta de nuevo.');
+      }
+    });
   }
 
   volverAlMenu() {

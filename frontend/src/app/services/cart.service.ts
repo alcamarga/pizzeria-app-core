@@ -1,8 +1,11 @@
 // Servicio compartido para el estado del carrito usando Signals.
 // Autor: Camilo Martínez | Fecha: 23/03/2026 | Versión: 1.7
 
-import { Injectable, computed, effect, signal } from '@angular/core';
+import { Injectable, computed, effect, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Pizza } from '../models/pizza.model';
+import { environment } from '../../environments/environment';
 
 export interface ArticuloCarrito {
   pizzaId: number;
@@ -15,6 +18,8 @@ export interface ArticuloCarrito {
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
+  private http = inject(HttpClient);
+  private apiUrl = environment.apiUrl;
   // Señal interna que almacena los artículos del carrito
   private _items = signal<ArticuloCarrito[]>(this.cargarDesdeStorage());
 
@@ -91,5 +96,30 @@ export class CartService {
   /** Vacía todo el carrito. */
   vaciarCarrito(): void {
     this._items.set([]);
+  }
+
+  /** Envía el pedido al backend. */
+  confirmarPedido(usuarioId: number): Observable<any> {
+    const subtotal = this.totalCarrito();
+    const iva = subtotal * 0.19; // 19% IVA
+    const total = subtotal + iva;
+    const fechaActual = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+    const payload = {
+      usuario_id: usuarioId,
+      subtotal: subtotal,
+      iva: iva,
+      total: total,
+      fecha_hora: fechaActual,
+      articulos: this._items().map(item => ({
+        pizza_id: item.pizzaId,
+        nombre: item.nombre,
+        tamano: item.tamano,
+        cantidad: item.cantidad,
+        precio: item.precioUnitario
+      }))
+    };
+
+    return this.http.post(`${this.apiUrl}/pedidos`, payload);
   }
 }

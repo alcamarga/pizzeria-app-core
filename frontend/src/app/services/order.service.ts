@@ -1,0 +1,38 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+export interface ItemPedido {
+  nombre: string;
+  tamano: string;
+  cantidad: number;
+  precio: number;
+}
+
+export interface Pedido {
+  id: number;
+  usuario_id: number;
+  fecha_hora: string;
+  subtotal: number;
+  iva: number;
+  total: number;
+  estado: string;
+  articulos: ItemPedido[];
+}
+
+@Injectable({ providedIn: 'root' })
+export class OrderService {
+  private http = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/pedidos`;
+
+  // Listar pedidos (filtra automáticamente en el backend por token)
+  obtenerPedidos(): Observable<{ pedidos: Pedido[] }> {
+    return this.http.get<{ pedidos: Pedido[] }>(this.apiUrl);
+  }
+
+  // Actualizar estado (solo para admin)
+  actualizarEstado(id: number, estado: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}/estado`, { estado });
+  }
+}

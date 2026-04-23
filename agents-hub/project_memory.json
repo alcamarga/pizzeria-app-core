@@ -1,23 +1,21 @@
 {
-  "last_milestone": "Implementación de Sistema de Carrito Reactivo y Resumen de Pedido",
+  "last_milestone": "Estandarización de Unidades Métricas (gr/ml) en Recetas e Inventario",
   "technical_learnings": [
     "La URL base del API debe ser absoluta (http://localhost:5000/api) para evitar fallos de proxy.",
-    "El endpoint /api/pizzas en Flask requiere explícitamente los métodos ['GET', 'POST'].",
-    "Uso de Angular Signals para gestionar el estado global del carrito con persistencia automática vía effects y localStorage.",
-    "Importancia de la limpieza de archivos para evitar errores de 'Duplicate identifier' al concatenar código por error.",
-    "Se implementó un modelo Insumo en SQLAlchemy para gestionar existencias (Harina, Queso, Salsa)."
+    "Uso de Signals para feedback visual y gestión de estado en el panel administrativo.",
+    "Implementación de lógica de negocio en el backend para descontar inventario basado en recetas.",
+    "Estandarización de unidades (gr para sólidos, ml para líquidos) para mejorar la precisión del inventario SaaS."
   ],
-  "current_state": "Frontend cuenta con un sistema de carrito funcional y persistente. El MenuComponent permite añadir productos con feedback visual ('¡Agregado!') y el nuevo ResumenPedido permite gestionar cantidades y confirmar la orden.",
+  "current_state": "SaaS profesional con gestión de recetas en unidades métricas estándar. El sistema descuenta automáticamente Masa (unidades), Salsa (ml) y Queso (gr) al preparar pedidos.",
   "pending_tasks": [
-    "Proteger el endpoint de creación y edición de pizzas con @requiere_admin.",
     "Vincular el formulario con la carga de imágenes para las nuevas pizzas.",
-    "Implementar el procesamiento real del pedido en el backend (crear tabla de Pedidos)."
+    "Implementar sistema de alertas de stock bajo basado en las recetas proyectadas."
   ],
   "historial_previo": {
     "estado_del_proyecto": {
-      "ultima_actualizacion": "2026-04-21",
-      "version": "0.8.0-beta",
-      "hito_actual": "Carrito Reactivo (Signals), UI Feedback y Resumen de Pedido Premium"
+      "ultima_actualizacion": "2026-04-23",
+      "version": "1.1.1",
+      "hito_actual": "Estandarización Métrica y Precisión de Inventario"
     },
     "errores_criticos_resueltos": [
       {

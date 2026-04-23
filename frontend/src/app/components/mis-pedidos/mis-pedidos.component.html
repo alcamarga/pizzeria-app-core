@@ -1,0 +1,48 @@
+<div class="mis-pedidos-container">
+  <div class="header">
+    <h1>Mis Pedidos</h1>
+    <p>Sigue el rastro de tus pizzas favoritas</p>
+  </div>
+
+  <div *ngIf="cargando" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando tus pedidos...</p>
+  </div>
+
+  <div *ngIf="!cargando && pedidos.length === 0" class="empty-state">
+    <i class="icon-pizza-sad"></i>
+    <h3>Aún no tienes pedidos</h3>
+    <p>¿Qué tal si pides algo delicioso ahora?</p>
+    <button routerLink="/menu" class="btn-primary">Ver Menú</button>
+  </div>
+
+  <div *ngIf="!cargando && pedidos.length > 0" class="pedidos-list">
+    <div *ngFor="let pedido of pedidos" class="pedido-card">
+      <div class="pedido-header">
+        <span class="pedido-id">Orden #{{ pedido.id }}</span>
+        <span [class]="'badge ' + getBadgeClass(pedido.estado)">{{ pedido.estado }}</span>
+      </div>
+      
+      <div class="pedido-body">
+        <div class="info-row">
+          <span class="label">Fecha:</span>
+          <span class="value">{{ pedido.fecha_hora }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Productos:</span>
+          <div class="articulos-mini">
+            <span *ngFor="let art of pedido.articulos">{{ art.cantidad }}x {{ art.nombre }} ({{ art.tamano }})</span>
+          </div>
+        </div>
+        <div class="info-row total-row">
+          <span class="label">Total:</span>
+          <span class="value total">{{ pedido.total | currency:'USD':'symbol':'1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-actions">
+    <button routerLink="/menu" class="btn-secondary">Volver al Menú</button>
+  </div>
+</div>

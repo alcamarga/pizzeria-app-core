@@ -33,6 +33,22 @@
            🧀 Inventario de Insumos
         </a>
       </li>
+       <li class="nav-item ms-2">
+        <a class="nav-link fw-bold" 
+           [ngClass]="pestanaActiva === 'pedidos' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
+           (click)="cambiarPestana('pedidos')" 
+           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+           📋 Gestión de Pedidos
+        </a>
+      </li>
+      <li class="nav-item ms-2">
+        <a class="nav-link fw-bold" 
+           [ngClass]="pestanaActiva === 'recetas' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
+           (click)="cambiarPestana('recetas')" 
+           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+           🥣 Configuración de Recetas
+        </a>
+      </li>
     </ul>
   </div>
 
@@ -45,6 +61,16 @@
     <div *ngIf="pestanaActiva === 'insumos'">
       <!-- Componente para harina, queso, etc. | Supplies inventory component -->
       <app-inventario></app-inventario>
+    </div>
+
+    <div *ngIf="pestanaActiva === 'pedidos'">
+      <!-- Componente para gestionar pedidos y estados -->
+      <app-gestion-pedidos></app-gestion-pedidos>
+    </div>
+
+    <div *ngIf="pestanaActiva === 'recetas'">
+      <!-- Componente para configurar recetas -->
+      <app-configuracion-recetas></app-configuracion-recetas>
     </div>
   </div>
 </div>

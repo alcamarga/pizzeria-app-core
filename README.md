@@ -27,6 +27,8 @@ Para levantar el entorno y correr app.py, sigue estos pasos:
 ## Sección de Features
 - **Diseño Glassmorphism**: Nuestro diseño utiliza una combinación de gradientes y sombras para crear un efecto visual atractivo.
 - **Uso de Signals**: Utilizamos Signals para manejar el estado del proyecto y mantener la información sincronizada entre los diferentes componentes.
+- **Seguimiento de Pedidos**: Sistema integral para que los clientes sigan sus pedidos y los administradores gestionen los estados en tiempo real.
+- **Gestión de Recetas e Inventario**: Control detallado de insumos por producto con descuento automático de stock (en gr, ml y unidades) al iniciar la preparación.
 
 ## Estado actual
-😊 ¡Ya tenemos el sistema de modelos y servicios sincronizados! Ahora estamos listos para agregar funcionalidad y mejorar la experiencia del usuario.
+😊 ¡SaaS de Pizzería Profesional! Ya contamos con gestión de inventario inteligente basada en recetas, seguimiento de pedidos y un panel administrativo completo.
