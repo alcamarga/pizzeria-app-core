@@ -1,23 +1,39 @@
 <div class="dashboard-container">
   <h1>Panel de Administrador</h1>
-  <div class="cards">
-    <div class="card">
-      <h2>Ventas del Día</h2>
-      <p class="value">${{ ventasDelDia }}</p>
+  
+  <div class="row g-4 mb-4" *ngIf="usuario?.rol === 'admin'">
+    <div class="col-md-4">
+      <div class="stat-card p-3 d-flex align-items-center">
+        <div class="icon-box bg-success bg-opacity-25 text-success me-3">💰</div>
+        <div>
+          <div class="text-muted small">Ventas del Día</div>
+          <div class="h4 fw-bold mb-0">${{ ventasDelDia | number }}</div>
+        </div>
+      </div>
     </div>
-    <div class="card">
-      <h2>Pedidos Pendientes</h2>
-      <p class="value">{{ pedidosPendientes }}</p>
+    <div class="col-md-4">
+      <div class="stat-card p-3 d-flex align-items-center">
+        <div class="icon-box bg-warning bg-opacity-25 text-warning me-3">📦</div>
+        <div>
+          <div class="text-muted small">Pedidos Pendientes</div>
+          <div class="h4 fw-bold mb-0">{{ pedidosPendientes }}</div>
+        </div>
+      </div>
     </div>
-    <div class="card">
-      <h2>Inventario de Pizzas</h2>
-      <p class="value">{{ inventarioPizzas }} unidades</p>
+    <div class="col-md-4">
+      <div class="stat-card p-3 d-flex align-items-center">
+        <div class="icon-box bg-info bg-opacity-25 text-info me-3">🍕</div>
+        <div>
+          <div class="text-muted small">Pizzas en Inventario</div>
+          <div class="h4 fw-bold mb-0">{{ inventarioPizzas }}</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="tabs-container mt-4 mb-3 p-3" style="background: rgba(0,0,0,0.6); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3);">
     <ul class="nav nav-tabs border-0">
-      <li class="nav-item">
+      <li class="nav-item" *ngIf="usuario?.rol === 'admin'">
         <a class="nav-link fw-bold" 
            [ngClass]="pestanaActiva === 'menu' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
            (click)="cambiarPestana('menu')" 
@@ -25,7 +41,7 @@
            🍕 Gestión de Menú
         </a>
       </li>
-      <li class="nav-item ms-2">
+      <li class="nav-item ms-2" *ngIf="usuario?.rol === 'admin'">
         <a class="nav-link fw-bold" 
            [ngClass]="pestanaActiva === 'insumos' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
            (click)="cambiarPestana('insumos')" 
@@ -41,12 +57,20 @@
            📋 Gestión de Pedidos
         </a>
       </li>
-      <li class="nav-item ms-2">
+      <li class="nav-item ms-2" *ngIf="usuario?.rol === 'admin'">
         <a class="nav-link fw-bold" 
            [ngClass]="pestanaActiva === 'recetas' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
            (click)="cambiarPestana('recetas')" 
            style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
            🥣 Configuración de Recetas
+        </a>
+      </li>
+      <li class="nav-item ms-2" *ngIf="usuario?.rol === 'admin'">
+        <a class="nav-link fw-bold" 
+           [ngClass]="pestanaActiva === 'personal' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
+           (click)="cambiarPestana('personal')" 
+           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+           👥 Gestión de Personal
         </a>
       </li>
     </ul>
@@ -68,9 +92,14 @@
       <app-gestion-pedidos></app-gestion-pedidos>
     </div>
 
-    <div *ngIf="pestanaActiva === 'recetas'">
+    <div *ngIf="pestanaActiva === 'recetas' && usuario?.rol === 'admin'">
       <!-- Componente para configurar recetas -->
       <app-configuracion-recetas></app-configuracion-recetas>
+    </div>
+
+    <div *ngIf="pestanaActiva === 'personal' && usuario?.rol === 'admin'">
+      <!-- Componente para gestionar personal -->
+      <app-gestion-personal></app-gestion-personal>
     </div>
   </div>
 </div>

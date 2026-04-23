@@ -68,6 +68,11 @@ export class MenuComponent implements OnInit {
       },
       error: (err) => {
         this.cargando.set(false);
+        if (err.status === 401 || err.status === 403) {
+          console.error('[AUTH ERROR] No tienes permisos para ver las pizzas:', err);
+        } else {
+          console.error('Error al cargar el menú:', err);
+        }
         this.error.set('Error al cargar el menú.');
       }
     });

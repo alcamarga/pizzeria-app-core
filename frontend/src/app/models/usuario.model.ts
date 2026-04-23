@@ -1,7 +1,7 @@
 // Interfaces para el modelo Usuario y autenticación JWT.
 // Autor: Camilo Martinez | Fecha: 23/03/2026 | Versión: 4.1
 
-export type RolUsuario = 'cliente' | 'admin';
+export type RolUsuario = 'cliente' | 'admin' | 'cocinero' | 'domiciliario';
 
 export interface Usuario {
   id: number;
@@ -28,6 +28,8 @@ export interface LoginCargaUtil {
 export interface RespuestaAutenticacion {
   access_token: string;
   usuario: Usuario;
+  rol: string;
+  email: string;
 }
 
 // Representación de la sesión activa en el estado de la aplicación | Active session representation in app state

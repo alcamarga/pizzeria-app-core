@@ -46,7 +46,11 @@ export class DashboardComponent implements OnInit {
         this.cargandoInventario = false;
       },
       error: (err) => {
-        console.error('Error al cargar inventario:', err);
+        if (err.status === 401 || err.status === 403) {
+          console.error('[AUTH ERROR] Sesión inválida al cargar inventario:', err);
+        } else {
+          console.error('Error al cargar inventario:', err);
+        }
         this.errorInventario = 'Error al cargar el inventario. Inténtalo de nuevo.';
         this.cargandoInventario = false;
       }

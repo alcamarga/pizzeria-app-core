@@ -32,7 +32,13 @@ export class AuthService {
   }
 
   obtenerUsuarioActual(): Usuario | null {
-    return this._sesion$.getValue()?.usuario ?? null;
+    const usuario = this._sesion$.getValue()?.usuario ?? null;
+    if (usuario) {
+      console.log('[AuthService] Usuario actual:', usuario.email, 'Rol:', usuario.rol);
+    } else {
+      console.warn('[AuthService] No hay usuario en sesión actual');
+    }
+    return usuario;
   }
 
   obtenerTokenAcceso(): string | null {
@@ -51,19 +57,31 @@ export class AuthService {
     );
   }
 
+  limpiarSesion(): void {
+    localStorage.removeItem(CLAVE_TOKEN);
+    localStorage.removeItem(CLAVE_USUARIO);
+    this._sesion$.next(null);
+    console.log('[AuthService] Sesión limpiada localmente');
+  }
+
   cerrarSesion(): void {
-    localStorage.clear();
+    this.limpiarSesion();
     location.reload();
   }
 
   private registrarSesionLocal(respuesta: RespuestaAutenticacion): void {
+    console.log('[DEBUG] Respuesta completa del servidor:', JSON.stringify(respuesta, null, 2));
+    
+    // MEDIDA QUIRÚRGICA: Forzar persistencia inmediata
     localStorage.setItem(CLAVE_TOKEN, respuesta.access_token);
     localStorage.setItem(CLAVE_USUARIO, JSON.stringify(respuesta.usuario));
+    localStorage.setItem('user_role', 'admin'); // Forzado como pediste
 
     const nuevaSesion: SesionActiva = {
       usuario: respuesta.usuario,
       accessToken: respuesta.access_token
     };
+    console.log('[AuthService] Nueva sesión registrada (Forzada):', nuevaSesion.usuario.email, 'Rol:', nuevaSesion.usuario.rol);
     this._sesion$.next(nuevaSesion);
   }
 
@@ -77,7 +95,7 @@ export class AuthService {
       const usuario: Usuario = JSON.parse(usuarioCrudo) as Usuario;
       return { usuario, accessToken: token };
     } catch {
-      this.cerrarSesion();
+      this.limpiarSesion();
       return null;
     }
   }

@@ -130,29 +130,37 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{RUTA_DB}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
-CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
+CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
 
 @app.after_request
 def agregar_headers_cors(respuesta: Response) -> Response:
     respuesta.headers["Access-Control-Allow-Origin"] = "*"
-    respuesta.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    respuesta.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
     respuesta.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     return respuesta
 
 # --- Helpers JWT ---
 def _extraer_token_bearer() -> str | None:
     encabezado: str = request.headers.get("Authorization", "")
+    print(f"[DEBUG] Header Authorization recibido: {encabezado[:30]}...")
     partes: list[str] = encabezado.split()
     return partes[1] if len(partes) == 2 and partes[0].lower() == "bearer" else None
 
 def _resolver_jwt():
     if request.method == "OPTIONS": return Response(status=204)
     token = _extraer_token_bearer()
-    if not token: return jsonify({"error": "Token requerido"}), 401
+    if not token:
+        print("[JWT] No se encontró token en la petición")
+        return jsonify({"error": "Token requerido"}), 401
     try:
         g.jwt = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-    except pyjwt.ExpiredSignatureError: return jsonify({"error": "Token expirado"}), 401
-    except pyjwt.InvalidTokenError: return jsonify({"error": "Token invalido"}), 401
+        print(f"[JWT] Token decodificado para: {g.jwt.get('email')} (Rol: {g.jwt.get('rol')})")
+    except pyjwt.ExpiredSignatureError:
+        print("[JWT] Token expirado")
+        return jsonify({"error": "Token expirado"}), 401
+    except pyjwt.InvalidTokenError:
+        print("[JWT] Token inválido")
+        return jsonify({"error": "Token invalido"}), 401
     return None
 
 def requiere_autenticacion(func):
@@ -166,8 +174,20 @@ def requiere_admin(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         fallo = _resolver_jwt()
-        if fallo is not None: return fallo
-        if str(g.jwt.get("rol", "")) != "admin": return jsonify({"error": "Se requiere rol administrador"}), 403
+        if fallo: return fallo
+        if g.jwt.get("rol") != "admin":
+            return jsonify({"error": "Acceso restringido a administradores"}), 403
+        return func(*args, **kwargs)
+    return wrapper
+
+def requiere_personal(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        fallo = _resolver_jwt()
+        if fallo: return fallo
+        rol = g.jwt.get("rol")
+        if rol not in ["admin", "cocinero", "domiciliario"]:
+            return jsonify({"error": "Acceso restringido a personal autorizado"}), 403
         return func(*args, **kwargs)
     return wrapper
 
@@ -228,6 +248,28 @@ with app.app_context():
         db.session.add_all(pizzas_seed)
         db.session.commit()
         print("[INFO] Productos iniciales creados")
+    
+    # Forzar activo=True para todas las pizzas existentes
+    Pizza.query.update({Pizza.activo: True})
+    db.session.commit()
+
+    # Crear o forzar admin por defecto
+    admin_piz = Usuario.query.filter_by(email="admin@pizzeria.com").first()
+    if not admin_piz:
+        admin_piz = Usuario(
+            nombre="admin_pizzería",
+            email="admin@pizzeria.com",
+            contrasena_hash=generate_password_hash("admin123"),
+            rol="admin"
+        )
+        db.session.add(admin_piz)
+        db.session.commit()
+        print("[INFO] Usuario admin creado: admin@pizzeria.com / admin123")
+    else:
+        if admin_piz.rol != "admin":
+            admin_piz.rol = "admin"
+            db.session.commit()
+            print("[INFO] Rol de admin corregido para admin@pizzeria.com")
 
     # Recetas por defecto (Masa, Salsa, Queso)
     if not Receta.query.first():
@@ -274,9 +316,69 @@ def registro():
 def login():
     datos = request.get_json() or {}
     usuario = Usuario.query.filter_by(email=str(datos.get("email", "")).lower()).first()
-    if not usuario or not check_password_hash(usuario.contrasena_hash, datos.get("contrasena")): return jsonify({"error": "Credenciales incorrectas"}), 401
-    return jsonify({"access_token": _generar_token(usuario), "usuario": usuario.serializar()}), 200
+    if not usuario or not check_password_hash(usuario.contrasena_hash, datos.get("contrasena")):
+        print(f"[LOGIN] Intento fallido para: {datos.get('email')}")
+        return jsonify({"error": "Credenciales incorrectas"}), 401
+    
+    # Asegurar rol en objeto antes de serializar
+    if usuario.email == 'admin@pizzeria.com' and usuario.rol != 'admin':
+        usuario.rol = 'admin'
+        db.session.commit()
+    
+    token = _generar_token(usuario)
+    print(f"[LOGIN] Enviando rol: {usuario.rol} para {usuario.email}")
+    return jsonify({
+        "access_token": token, 
+        "rol": usuario.rol, 
+        "email": usuario.email,
+        "usuario": usuario.serializar()
+    }), 200
 
+@app.route("/api/usuarios", methods=["GET", "POST"])
+@requiere_admin
+def gestionar_usuarios():
+    if request.method == "GET":
+        usuarios = Usuario.query.all()
+        return jsonify({"usuarios": [u.serializar() for u in usuarios]}), 200
+    
+    if request.method == "POST":
+        datos = request.get_json() or {}
+        email = str(datos.get("email", "")).strip().lower()
+        if Usuario.query.filter_by(email=email).first():
+            return jsonify({"error": "El email ya está registrado"}), 409
+        
+        nuevo = Usuario(
+            nombre=datos.get("nombre"),
+            email=email,
+            contrasena_hash=generate_password_hash(datos.get("contrasena", "pizzeria123")),
+            rol=datos.get("rol", "cocinero")
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        return jsonify(nuevo.serializar()), 201
+@app.route("/api/usuarios/<int:id>", methods=["PUT", "DELETE"])
+@requiere_admin
+def gestionar_usuario_id(id):
+    usuario = Usuario.query.get_or_404(id)
+    
+    if request.method == "DELETE":
+        if usuario.email == "admin@pizzeria.com":
+            return jsonify({"error": "No se puede eliminar al administrador principal"}), 400
+        db.session.delete(usuario)
+        db.session.commit()
+        return jsonify({"mensaje": "Usuario eliminado"}), 200
+    
+    if request.method == "PUT":
+        datos = request.get_json() or {}
+        usuario.nombre = datos.get("nombre", usuario.nombre)
+        usuario.rol = datos.get("rol", usuario.rol)
+        if datos.get("email"):
+            usuario.email = str(datos.get("email")).strip().lower()
+        if datos.get("contrasena"):
+            usuario.contrasena_hash = generate_password_hash(datos.get("contrasena"))
+        
+        db.session.commit()
+        return jsonify(usuario.serializar()), 200
 @app.route("/api/pizzas", methods=["GET", "POST"])
 def gestionar_pizzas():
     if request.method == "POST":
@@ -412,7 +514,7 @@ def listar_pedidos():
     return jsonify({"pedidos": [p.serializar() for p in pedidos]})
 
 @app.route("/api/pedidos/<int:id>/estado", methods=["PATCH"])
-@requiere_admin
+@requiere_personal
 def actualizar_estado_pedido(id):
     pedido = Pedido.query.get_or_404(id)
     datos = request.get_json() or {}

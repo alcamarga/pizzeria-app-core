@@ -22,6 +22,7 @@ export const authInterceptor: HttpInterceptorFn = (
 ): Observable<HttpEvent<unknown>> => {
   const authService = inject(AuthService);
   const token: string | null = authService.obtenerTokenAcceso();
+  if (token) console.log('[AuthInterceptor] Inyectando token para:', req.url);
 
   // Clonar la petición e inyectar el header Authorization si hay token
   // Clone request and inject Authorization header if token exists

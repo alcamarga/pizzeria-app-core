@@ -29,6 +29,8 @@ Para levantar el entorno y correr app.py, sigue estos pasos:
 - **Uso de Signals**: Utilizamos Signals para manejar el estado del proyecto y mantener la información sincronizada entre los diferentes componentes.
 - **Seguimiento de Pedidos**: Sistema integral para que los clientes sigan sus pedidos y los administradores gestionen los estados en tiempo real.
 - **Gestión de Recetas e Inventario**: Control detallado de insumos por producto con descuento automático de stock (en gr, ml y unidades) al iniciar la preparación.
+- **RBAC Profesional**: Control de acceso basado en roles (Admin, Cocinero, Domiciliario) con interfaces adaptativas y seguridad en el backend.
+- **Gestión de Personal Administrativa**: Panel dedicado para que el administrador gestione a su equipo con un CRUD completo (Crear, Editar, Eliminar) y asignación de roles.
 
 ## Estado actual
-😊 ¡SaaS de Pizzería Profesional! Ya contamos con gestión de inventario inteligente basada en recetas, seguimiento de pedidos y un panel administrativo completo.
+🚀 **Hito Alcanzado: Gestión de Personal Operativa**. El sistema administrativo ya permite el control total sobre la base de usuarios de staff, con persistencia blindada y una interfaz premium de alto rendimiento.

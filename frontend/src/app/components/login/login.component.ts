@@ -3,12 +3,12 @@
 // Fecha: 15/04/2026
 // Estética: Crema/Dorado con transparencia y bordes redondeados
 
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { LoginCargaUtil } from '../../models/usuario.model';
+import { LoginCargaUtil, RespuestaAutenticacion } from '../../models/usuario.model';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +17,7 @@ import { LoginCargaUtil } from '../../models/usuario.model';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
@@ -27,6 +27,11 @@ export class LoginComponent {
     email: ['', [Validators.required, Validators.email]],
     contrasena: ['', [Validators.required, Validators.minLength(6)]]
   });
+
+  ngOnInit(): void {
+    console.log('[Login] Limpieza de emergencia de localStorage');
+    localStorage.clear();
+  }
 
   enviando = false;
   errorMensaje: string | null = null;
@@ -45,34 +50,46 @@ export class LoginComponent {
 
     this.enviando = true;
     this.errorMensaje = null;
+    
+    // Limpiar sesión previa para evitar datos corruptos
+    this.auth.limpiarSesion();
 
     const payload: LoginCargaUtil = this.formulario.value as LoginCargaUtil;
 
     this.auth.iniciarSesion(payload).subscribe({
-      next: () => {
-        this.enviando = false;
-        // Verificar si hay intención de compra guardada
-        const intencionCruda = localStorage.getItem('intencion_compra');
-        if (intencionCruda) {
-          try {
-            const intencion = JSON.parse(intencionCruda) as {
-              pizzaId: number;
-              tamanoIndice: number;
-            };
-            // Limpiar intención y redirigir al menú para que el usuario complete la acción
-            localStorage.removeItem('intencion_compra');
-            // Redirigir al menú con parámetro para auto-agregar
-            this.router.navigate(['/menu'], {
-              queryParams: { agregar: intencion.pizzaId, tamano: intencion.tamanoIndice }
-            });
-            return;
-          } catch (e) {
-            console.error('Error al procesar intención de compra:', e);
-            localStorage.removeItem('intencion_compra');
+      next: (respuesta) => {
+        // Sincronización de Carga: Token primero
+        localStorage.setItem('access_token', respuesta.access_token);
+        if (respuesta.rol) localStorage.setItem('user_role', respuesta.rol);
+
+        // Redirigir según el rol usando la respuesta directa del servidor
+        const usuario = respuesta.usuario;
+        console.log('[LoginComponent] Login exitoso. Usuario:', usuario.nombre, 'Rol:', usuario.rol);
+        
+        if (usuario.rol === 'admin' || usuario.rol === 'cocinero' || usuario.email === 'admin@pizzeria.com') {
+          console.log('[LoginComponent] Login exitoso. Redirigiendo al Dashboard...');
+          this.router.navigate(['/admin/dashboard']);
+        } else {
+          // Verificar si hay intención de compra guardada
+          const intencionCruda = localStorage.getItem('intencion_compra');
+          if (intencionCruda) {
+            try {
+              const intencion = JSON.parse(intencionCruda) as {
+                pizzaId: number;
+                tamanoIndice: number;
+              };
+              // Limpiar intención y redirigir al menú
+              localStorage.removeItem('intencion_compra');
+              this.router.navigate(['/menu'], {
+                queryParams: { agregar: intencion.pizzaId, tamano: intencion.tamanoIndice }
+              });
+              return;
+            } catch (e) {
+              localStorage.removeItem('intencion_compra');
+            }
           }
+          this.router.navigate(['/menu']);
         }
-        // Sin intención de compra: ir al menú
-        this.router.navigate(['/menu']);
       },
       error: (err: { status: number }) => {
         this.enviando = false;

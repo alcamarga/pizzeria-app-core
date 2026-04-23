@@ -1,0 +1,88 @@
+<div class="gestion-container p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-gold"><i class="fas fa-users-cog me-2"></i>Gestión de Personal</h2>
+    <button class="btn btn-gold" (click)="abrirModalNuevo()">
+      <i class="fas fa-user-plus me-2"></i>Nuevo Empleado
+    </button>
+  </div>
+
+  <!-- Tabla de Personal -->
+  <div class="card bg-dark-glass border-gold">
+    <div class="table-responsive">
+      <table class="table table-dark table-hover mb-0">
+        <thead class="text-gold border-gold">
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Fecha Registro</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of personal()">
+            <td>{{ u.id }}</td>
+            <td class="fw-bold">{{ u.nombre }}</td>
+            <td>{{ u.email }}</td>
+            <td>
+              <span class="badge" [ngClass]="{
+                'bg-danger': u.rol === 'admin',
+                'bg-info text-dark': u.rol === 'cocinero',
+                'bg-warning text-dark': u.rol === 'domiciliario'
+              }">{{ u.rol | uppercase }}</span>
+            </td>
+            <td>{{ u.fecha_registro | date:'short' }}</td>
+            <td>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-warning me-2" (click)="prepararEdicion(u)">
+                  <i class="fas fa-edit me-1"></i> Editar
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="eliminarUsuario(u.id!)">
+                  <i class="fas fa-trash me-1"></i> Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal / Formulario Flotante -->
+  <div class="modal-overlay" *ngIf="mostrarFormulario" (click)="mostrarFormulario = false">
+    <div class="modal-content bg-dark border-gold p-4" (click)="$event.stopPropagation()">
+      <h3 class="text-gold mb-4">{{ editandoId ? 'Editar' : 'Registrar' }} Empleado</h3>
+      
+      <div class="mb-3">
+        <label class="form-label text-light">Nombre Completo</label>
+        <input type="text" class="form-control bg-dark text-light border-gold" 
+               [(ngModel)]="nuevoUsuario.nombre" placeholder="Ej: Juan Pérez">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-light">Correo Electrónico</label>
+        <input type="email" class="form-control bg-dark text-light border-gold" 
+               [(ngModel)]="nuevoUsuario.email" placeholder="ejemplo@pizzeria.com">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-light">Contraseña Inicial</label>
+        <input type="password" class="form-control bg-dark text-light border-gold" 
+               [(ngModel)]="nuevoUsuario.password" placeholder="Mínimo 6 caracteres">
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label text-light">Asignar Rol</label>
+        <select class="form-select bg-dark text-light border-gold" [(ngModel)]="nuevoUsuario.rol">
+          <option *ngFor="let rol of rolesDisponibles" [value]="rol">{{ rol | uppercase }}</option>
+        </select>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-light w-100" (click)="mostrarFormulario = false">Cancelar</button>
+        <button class="btn btn-gold w-100" (click)="registrarPersonal()">Guardar Registro</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,39 +1,42 @@
 {
-  "last_milestone": "Estandarización de Unidades Métricas (gr/ml) en Recetas e Inventario",
+  "last_milestone": "Gestión de Personal Completa y CRUD Operativo",
   "technical_learnings": [
     "La URL base del API debe ser absoluta (http://localhost:5000/api) para evitar fallos de proxy.",
-    "Uso de Signals para feedback visual y gestión de estado en el panel administrativo.",
-    "Implementación de lógica de negocio en el backend para descontar inventario basado en recetas.",
-    "Estandarización de unidades (gr para sólidos, ml para líquidos) para mejorar la precisión del inventario SaaS."
+    "Implementación de decoradores personalizados (@requiere_admin, @requiere_personal) para seguridad granular.",
+    "Uso de tipos de TypeScript y Signals para adaptar la interfaz según el rol del usuario logueado.",
+    "Gestión de personal administrativa con CRUD completo (Crear, Leer, Actualizar, Eliminar) y validación de roles.",
+    "Resolución de bucles de redirección mediante persistencia inmediata en localStorage y guards asíncronos."
   ],
-  "current_state": "SaaS profesional con gestión de recetas en unidades métricas estándar. El sistema descuenta automáticamente Masa (unidades), Salsa (ml) y Queso (gr) al preparar pedidos.",
+  "current_state": "Sistema administrativo robusto con RBAC. Dashboard operativo con gestión de personal (CRUD completo), inventario y recetas. Sistema de autenticación blindado contra bucles de redirección.",
   "pending_tasks": [
     "Vincular el formulario con la carga de imágenes para las nuevas pizzas.",
-    "Implementar sistema de alertas de stock bajo basado en las recetas proyectadas."
+    "Implementar sistema de notificaciones push para domiciliarios al estar un pedido listo.",
+    "Optimizar el cierre de sesión eliminando logs de depuración masivos.",
+    "Refinar la lógica de resta de insumos al cambiar estado de pedido a 'entregado'."
   ],
   "historial_previo": {
     "estado_del_proyecto": {
       "ultima_actualizacion": "2026-04-23",
-      "version": "1.1.1",
-      "hito_actual": "Estandarización Métrica y Precisión de Inventario"
+      "version": "1.3.0",
+      "hito_actual": "CRUD de Personal y Estabilización de Sesión"
     },
     "errores_criticos_resueltos": [
       {
-        "id": "TS-DUP-CART",
-        "problema": "Errores de compilación 'Duplicate identifier CartService' y 'Multiple exports' por código duplicado en cart.service.ts.",
-        "solucion": "Se limpió y reescribió el servicio consolidando una única clase limpia con la lógica de Signals y persistencia.",
-        "fecha_fijacion": "2026-04-21"
+        "id": "AUTH-LOOP",
+        "problema": "Bucle infinito de redirección Login -> Dashboard -> Login por desincronización de estado.",
+        "solucion": "Se implementó persistencia inmediata del token y rol en localStorage y se añadió una pausa de 100ms en el Guard para esperar la escritura en disco.",
+        "fecha_fijacion": "2026-04-23"
       },
       {
-        "id": "TS2339-AUTH",
-        "problema": "La propiedad cerrarSesion no existía en AuthService",
-        "solucion": "Se unificaron todas las llamadas de cierre de sesión a 'cerrarSesion' en el Servicio, Interceptor y MenuComponent.",
-        "fecha_fijacion": "2026-04-18"
+        "id": "PIZZA-404",
+        "problema": "Las pizzas no se listaban (Error 404) por falta de decorador de ruta en el backend.",
+        "solucion": "Se restauró el decorador @app.route en la función gestionar_pizzas y se forzó activo=True en la base de datos.",
+        "fecha_fijacion": "2026-04-23"
       }
     ],
     "reglas_activas_resumen": {
       "idioma": "Español estricto para funciones (cerrarSesion, obtenerPizzas, agregarAlCarrito)",
-      "tema_ui": "Crema/Dorado/Verde sobre transparencia oscura (Glassmorphism)",
+      "tema_ui": "Dorado/Negro/Cristal con Glassmorphism premium",
       "convencion_nombres": "CamelCase para TS, kebab-case para CSS/HTML"
     }
   }
