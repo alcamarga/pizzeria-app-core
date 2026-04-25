@@ -22,13 +22,17 @@ export const authInterceptor: HttpInterceptorFn = (
 ): Observable<HttpEvent<unknown>> => {
   const authService = inject(AuthService);
   const token: string | null = authService.obtenerTokenAcceso();
-  if (token) console.log('[AuthInterceptor] Inyectando token para:', req.url);
+  
+  if (token) {
+    console.log(`[AuthInterceptor] Token enviado para ${req.url}:`, token.substring(0, 20) + '...');
+  } else {
+    console.warn(`[AuthInterceptor] No hay token para la petición a:`, req.url);
+  }
 
   // Clonar la petición e inyectar el header Authorization si hay token
-  // Clone request and inject Authorization header if token exists
   const peticionAutenticada: HttpRequest<unknown> = token
     ? req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` }
+        setHeaders: { Authorization: 'Bearer ' + token }
       })
     : req;
 
@@ -37,7 +41,8 @@ export const authInterceptor: HttpInterceptorFn = (
       // Si el backend responde 401, la sesión expiró o el token es inválido
       // If backend responds 401, session expired or token is invalid
       if (error.status === 401) {
-        authService.cerrarSesion();
+        console.error('[AuthInterceptor] Error 401 Detectado - Expulsando usuario...');
+        authService.expulsarUsuario();
       }
       return throwError(() => error);
     })

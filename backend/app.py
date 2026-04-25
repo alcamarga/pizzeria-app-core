@@ -122,10 +122,11 @@ class Pizza(db.Model):
 
 # --- Aplicación ---
 RUTA_DB: str = os.path.join(os.path.dirname(__file__), "pizzeria_core.db")
-JWT_SECRET: str = os.environ.get("JWT_SECRET", "pizzeria-app-core-dev-secret")
-JWT_EXPIRACION_HORAS: int = 24
+JWT_SECRET: str = "pizzeria_secret_key_fixed_2026_super_safe"
+JWT_EXPIRACION_HORAS: int = 168 # Aumentado a 7 días por petición del usuario
 
 app = Flask(__name__)
+app.config["JWT_SECRET_KEY"] = JWT_SECRET
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{RUTA_DB}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
@@ -142,25 +143,27 @@ def agregar_headers_cors(respuesta: Response) -> Response:
 # --- Helpers JWT ---
 def _extraer_token_bearer() -> str | None:
     encabezado: str = request.headers.get("Authorization", "")
-    print(f"[DEBUG] Header Authorization recibido: {encabezado[:30]}...")
+    print(f"[EXTREMO] Header Authorization completo: '{encabezado}'")
     partes: list[str] = encabezado.split()
     return partes[1] if len(partes) == 2 and partes[0].lower() == "bearer" else None
 
 def _resolver_jwt():
     if request.method == "OPTIONS": return Response(status=204)
     token = _extraer_token_bearer()
+    if token: token = token.strip()
     if not token:
         print("[JWT] No se encontró token en la petición")
         return jsonify({"error": "Token requerido"}), 401
     try:
+        print(f"[JWT] Decodificando con secreto: {JWT_SECRET}")
         g.jwt = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         print(f"[JWT] Token decodificado para: {g.jwt.get('email')} (Rol: {g.jwt.get('rol')})")
     except pyjwt.ExpiredSignatureError:
         print("[JWT] Token expirado")
         return jsonify({"error": "Token expirado"}), 401
-    except pyjwt.InvalidTokenError:
-        print("[JWT] Token inválido")
-        return jsonify({"error": "Token invalido"}), 401
+    except pyjwt.InvalidTokenError as e:
+        print(f"[JWT] Token inválido: {e}")
+        return jsonify({"error": f"Token inválido: {str(e)}"}), 401
     return None
 
 def requiere_autenticacion(func):
@@ -192,7 +195,7 @@ def requiere_personal(func):
     return wrapper
 
 def _generar_token(usuario: Usuario) -> str:
-    carga_util = {"sub": usuario.id, "nombre": usuario.nombre, "email": usuario.email, "rol": usuario.rol, "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRACION_HORAS)}
+    carga_util = {"sub": str(usuario.id), "nombre": usuario.nombre, "email": usuario.email, "rol": usuario.rol, "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRACION_HORAS)}
     return pyjwt.encode(carga_util, JWT_SECRET, algorithm="HS256")
 
 # --- Inicialización de DB ---
@@ -382,6 +385,11 @@ def gestionar_usuario_id(id):
 @app.route("/api/pizzas", methods=["GET", "POST"])
 def gestionar_pizzas():
     if request.method == "POST":
+        fallo = _resolver_jwt()
+        if fallo: return fallo
+        if g.jwt.get("rol") != "admin":
+            return jsonify({"error": "Acceso restringido a administradores"}), 403
+        
         datos = request.get_json() or {}
         nueva = Pizza(
             nombre=datos.get('nombre'),
@@ -399,6 +407,7 @@ def gestionar_pizzas():
     return jsonify({"pizzas": [p.to_dict() for p in Pizza.query.filter_by(activo=True).all()]})
 
 @app.route("/api/pizzas/<int:id>", methods=["DELETE"])
+@requiere_admin
 def eliminar_pizza(id):
     pizza = Pizza.query.get_or_404(id)
     db.session.delete(pizza) # Hard delete
@@ -406,6 +415,7 @@ def eliminar_pizza(id):
     return jsonify({"status": "ok", "mensaje": "Pizza eliminada permanentemente"})
 
 @app.route("/api/pizzas/<int:id>", methods=["PUT"])
+@requiere_admin
 def actualizar_pizza(id):
     pizza = Pizza.query.get_or_404(id)
     datos = request.get_json() or {}
@@ -455,14 +465,12 @@ def delete_insumo(id):
 def crear_pedido():
     datos = request.get_json() or {}
     try:
-        # Extraer datos básicos
         usuario_id = datos.get("usuario_id")
         subtotal = float(datos.get("subtotal", 0.0))
         iva = float(datos.get("iva", 0.0))
         total = float(datos.get("total", 0.0))
         fecha_hora = datos.get("fecha_hora") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Crear instancia de Pedido
         nuevo_pedido = Pedido(
             usuario_id=usuario_id,
             subtotal=subtotal,
@@ -471,14 +479,24 @@ def crear_pedido():
             fecha_hora=fecha_hora
         )
         db.session.add(nuevo_pedido)
-        db.session.flush() # Para obtener el ID del pedido antes del commit
+        db.session.flush() 
 
-        # Agregar items del pedido
         articulos = datos.get("articulos", [])
         for item in articulos:
+            # --- MEJORA AQUÍ: Buscamos el ID si viene None ---
+            id_catalogo = item.get("pizza_id")
+            
+            if id_catalogo is None:
+                # Si el ID no viene del Angular, lo buscamos por nombre en la tabla Pizza
+                nombre_busqueda = item.get("nombre")
+                pizza_encontrada = Pizza.query.filter_by(nombre=nombre_busqueda).first()
+                if pizza_encontrada:
+                    id_catalogo = pizza_encontrada.id
+                    print(f"[FIX] ID recuperado para {nombre_busqueda}: {id_catalogo}")
+
             nuevo_item = ItemPedido(
                 pedido_id=nuevo_pedido.id,
-                pizza_id=item.get("pizza_id"), # Capturamos el ID del catalogo
+                pizza_id=id_catalogo, # <--- Ahora sí tendrá un número
                 nombre=item.get("nombre"),
                 tamano=item.get("tamano"),
                 cantidad=int(item.get("cantidad", 1)),
@@ -518,25 +536,56 @@ def listar_pedidos():
 def actualizar_estado_pedido(id):
     pedido = Pedido.query.get_or_404(id)
     datos = request.get_json() or {}
-    nuevo_estado = datos.get("estado")
-    
-    if not nuevo_estado:
-        return jsonify({"error": "El campo 'estado' es requerido"}), 400
-    
-    # Lógica de descuento de inventario
-    if nuevo_estado == "Preparando" and pedido.estado != "Preparando":
-        for item in pedido.articulos:
-            if item.pizza_id:
-                recetas = Receta.query.filter_by(pizza_id=item.pizza_id).all()
-                for r in recetas:
-                    insumo = Insumo.query.get(r.insumo_id)
-                    if insumo:
-                        insumo.cantidad_actual -= (r.cantidad_gastada * item.cantidad)
-                        print(f"[INFO] Inventario descontado: {insumo.nombre} (-{r.cantidad_gastada * item.cantidad})")
+    nuevo_estado = datos.get("estado", "")
+
+    estado_objetivo = nuevo_estado.strip().lower()
+    estado_actual = pedido.estado.strip().lower()
+
+    print(f"\n[DEBUG] Intentando cambiar pedido {id}: '{estado_actual}' -> '{estado_objetivo}'")
+
+    if estado_objetivo == 'entregado' and estado_actual != 'entregado':
+        try:
+            print(f"=== INICIANDO DESCUENTO PEDIDO {pedido.id} ===")
+            for item in pedido.articulos: 
+                # 1. Intentamos sacar el ID
+                id_a_buscar = item.pizza_id
+                
+                # 2. Si el ID es None (como en tu pedido 2), buscamos por NOMBRE
+                if id_a_buscar is None:
+                    print(f"[DEBUG] ID es None para '{item.nombre}', buscando por nombre...")
+                    # Quitamos la palabra 'Pizza' si es necesario o buscamos coincidencia parcial
+                    pizza_db = Pizza.query.filter(Pizza.nombre.icontains(item.nombre.replace("Pizza ", "").strip())).first()
+                    if pizza_db:
+                        id_a_buscar = pizza_db.id
+                        print(f"[DEBUG] Encontrado ID {id_a_buscar} para '{item.nombre}'")
+
+                if id_a_buscar:
+                    recetas = Receta.query.filter_by(pizza_id=id_a_buscar).all()
+                    print(f"[DEBUG] Se encontraron {len(recetas)} ingredientes")
+                    
+                    for r in recetas:
+                        insumo = Insumo.query.get(r.insumo_id)
+                        cantidad_total = r.cantidad_gastada * item.cantidad
+                        
+                        if insumo.cantidad_actual < cantidad_total:
+                            db.session.rollback()
+                            return jsonify({"error": f"No hay suficiente {insumo.nombre}"}), 400
+                        
+                        insumo.cantidad_actual -= cantidad_total
+                        print(f"[OK] Descontado: {insumo.nombre} (-{cantidad_total})")
+                else:
+                    print(f"[ERROR] Ni el ID ni el nombre '{item.nombre}' sirvieron.")
+
+            db.session.commit()
+            print("=== INVENTARIO ACTUALIZADO CON ÉXITO ===\n")
+        except Exception as e:
+            db.session.rollback()
+            print(f"[CRÍTICO] Error: {str(e)}")
+            return jsonify({"error": "Error en inventario"}), 500
 
     pedido.estado = nuevo_estado
     db.session.commit()
-    return jsonify({"status": "ok", "mensaje": f"Estado actualizado a {nuevo_estado}", "pedido": pedido.serializar()}), 200
+    return jsonify({"status": "ok", "mensaje": f"Estado actualizado a {nuevo_estado}"}), 200
 
 @app.route("/api/pizzas/<int:id>/receta", methods=["GET", "POST"])
 @requiere_admin

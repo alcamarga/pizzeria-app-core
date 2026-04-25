@@ -4,6 +4,7 @@ import { OrderService, Pedido } from '../../../services/order.service';
 import { FormsModule } from '@angular/forms';
 import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-gestion-pedidos',
@@ -23,8 +24,18 @@ export class GestionPedidosComponent implements OnInit {
 
   estadosDisponibles = ['Pendiente', 'Preparando', 'Enviado', 'Entregado', 'Cancelado'];
 
+  private authService = inject(AuthService);
+
   ngOnInit(): void {
-    this.cargarTodosLosPedidos();
+    // Sincronización de Carga: Solo disparar si hay sesión activa
+    this.authService.sesionActiva$.subscribe(sesion => {
+      if (sesion) {
+        console.log('[GestionPedidos] Sesión detectada, cargando pedidos...');
+        this.cargarTodosLosPedidos();
+      } else {
+        console.warn('[GestionPedidos] Esperando sesión activa para cargar datos.');
+      }
+    });
   }
 
   cargarTodosLosPedidos(): void {

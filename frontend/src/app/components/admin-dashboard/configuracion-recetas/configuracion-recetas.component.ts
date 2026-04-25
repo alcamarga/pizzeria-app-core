@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RecipeService, RecetaItem } from '../../../services/recipe.service';
 import { PizzaService } from '../../../services/pizza.service';
 import { InsumosService, Insumo } from '../../../services/insumos';
+import { AuthService } from '../../../services/auth.service';
 import { Pizza } from '../../../models/pizza.model';
 
 @Component({
@@ -29,9 +30,16 @@ export class ConfiguracionRecetasComponent implements OnInit {
     cantidad_gastada: 0
   };
 
+  private authService = inject(AuthService);
+
   ngOnInit(): void {
-    this.cargarPizzas();
-    this.cargarInsumos();
+    this.authService.sesionActiva$.subscribe(sesion => {
+      if (sesion) {
+        console.log('[ConfigRecetas] Sesión detectada, cargando catálogos...');
+        this.cargarPizzas();
+        this.cargarInsumos();
+      }
+    });
   }
 
   cargarPizzas(): void {

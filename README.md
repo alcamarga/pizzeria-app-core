@@ -34,3 +34,10 @@ Para levantar el entorno y correr app.py, sigue estos pasos:
 
 ## Estado actual
 🚀 **Hito Alcanzado: Gestión de Personal Operativa**. El sistema administrativo ya permite el control total sobre la base de usuarios de staff, con persistencia blindada y una interfaz premium de alto rendimiento.
+
+### 🍕 Gestión de Inventario Inteligente (Update 24/04/2026)
+El sistema ahora incluye un motor de descuentos automáticos vinculado al estado de los pedidos:
+- **Activación por Estado:** Los insumos se descuentan únicamente cuando el pedido cambia a estado "Entregado".
+- **Lógica de Recetas:** Cada producto está vinculado a una receta técnica (ej. gramos de queso, ml de salsa).
+- **Sistema Anti-Errores:** El backend valida la integridad de los datos mediante ID y fallback por nombre, asegurando que el stock siempre sea preciso.
+- **Control de Ruptura de Stock:** Validación automática que impide la entrega si no hay existencias suficientes.

@@ -58,17 +58,13 @@ export class LoginComponent implements OnInit {
 
     this.auth.iniciarSesion(payload).subscribe({
       next: (respuesta) => {
-        // Sincronización de Carga: Token primero
-        localStorage.setItem('access_token', respuesta.access_token);
-        if (respuesta.rol) localStorage.setItem('user_role', respuesta.rol);
-
         // Redirigir según el rol usando la respuesta directa del servidor
         const usuario = respuesta.usuario;
         console.log('[LoginComponent] Login exitoso. Usuario:', usuario.nombre, 'Rol:', usuario.rol);
         
         if (usuario.rol === 'admin' || usuario.rol === 'cocinero' || usuario.email === 'admin@pizzeria.com') {
-          console.log('[LoginComponent] Login exitoso. Redirigiendo al Dashboard...');
-          this.router.navigate(['/admin/dashboard']);
+          console.log('[LoginComponent] Login exitoso. Refrescando aplicación hacia el Dashboard...');
+          window.location.href = '/admin/dashboard';
         } else {
           // Verificar si hay intención de compra guardada
           const intencionCruda = localStorage.getItem('intencion_compra');

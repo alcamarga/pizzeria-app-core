@@ -1,24 +1,24 @@
 {
-  "last_milestone": "Gestión de Personal Completa y CRUD Operativo",
+  "last_milestone": "Inventario Automatizado e Integridad de Recetas",
   "technical_learnings": [
     "La URL base del API debe ser absoluta (http://localhost:5000/api) para evitar fallos de proxy.",
     "Implementación de decoradores personalizados (@requiere_admin, @requiere_personal) para seguridad granular.",
     "Uso de tipos de TypeScript y Signals para adaptar la interfaz según el rol del usuario logueado.",
     "Gestión de personal administrativa con CRUD completo (Crear, Leer, Actualizar, Eliminar) y validación de roles.",
-    "Resolución de bucles de redirección mediante persistencia inmediata en localStorage y guards asíncronos."
+    "Resolución de bucles de redirección mediante persistencia inmediata en localStorage y guards asíncronos.",
+    "Implementación de lógica de descuento atómica: uso de fallback por nombre (icontains) cuando el pizza_id es nulo para garantizar la integridad del inventario en pedidos antiguos."
   ],
-  "current_state": "Sistema administrativo robusto con RBAC. Dashboard operativo con gestión de personal (CRUD completo), inventario y recetas. Sistema de autenticación blindado contra bucles de redirección.",
+  "current_state": "Sistema administrativo completo con RBAC. Inventario inteligente que descuenta insumos automáticamente al entregar pedidos, con fallback de búsqueda por nombre para pedidos antiguos.",
   "pending_tasks": [
     "Vincular el formulario con la carga de imágenes para las nuevas pizzas.",
     "Implementar sistema de notificaciones push para domiciliarios al estar un pedido listo.",
-    "Optimizar el cierre de sesión eliminando logs de depuración masivos.",
-    "Refinar la lógica de resta de insumos al cambiar estado de pedido a 'entregado'."
+    "Optimizar el cierre de sesión eliminando logs de depuración masivos."
   ],
   "historial_previo": {
     "estado_del_proyecto": {
-      "ultima_actualizacion": "2026-04-23",
-      "version": "1.3.0",
-      "hito_actual": "CRUD de Personal y Estabilización de Sesión"
+      "ultima_actualizacion": "2026-04-24",
+      "version": "1.4.0",
+      "hito_actual": "Automatización de Inventario y Validación de Recetas"
     },
     "errores_criticos_resueltos": [
       {
@@ -32,6 +32,12 @@
         "problema": "Las pizzas no se listaban (Error 404) por falta de decorador de ruta en el backend.",
         "solucion": "Se restauró el decorador @app.route en la función gestionar_pizzas y se forzó activo=True en la base de datos.",
         "fecha_fijacion": "2026-04-23"
+      },
+      {
+        "id": "INV-NULL-ID",
+        "problema": "El inventario no se descontaba porque los ítems del pedido llegaban con pizza_id: None desde el frontend.",
+        "solucion": "Se implementó un motor de búsqueda inversa en el backend que recupera el ID de la pizza mediante el nombre del artículo usando filtros de coincidencia parcial.",
+        "fecha_fijacion": "2026-04-24"
       }
     ],
     "reglas_activas_resumen": {

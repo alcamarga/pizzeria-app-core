@@ -26,7 +26,9 @@ export class AdminGuard implements CanActivate {
         // Si no hay token, PERO el servidor podría estar caído, no redirigir violentamente
         console.warn('[AdminGuard] No se detectó token. Permaneciendo en la ruta actual para inspección.');
         return false;
-      })
+      }),
+      // Si el rol es null, esperamos un poco (opcionalmente)
+      delay(100)
     );
   }
 }
