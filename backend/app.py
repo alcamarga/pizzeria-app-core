@@ -2,7 +2,7 @@
 ## Fecha: 10/04/2026
 ## Proyecto: Pizzería App Core
 """API REST Flask (SQLite + JWT + CORS)."""
-
+''' AQUI ESTA TODO EL CODIGO VIEJO POR SI LO NECESITAMOS  
 from __future__ import annotations
 import os
 import json
@@ -59,9 +59,24 @@ class ItemPedido(db.Model):
     tamano = db.Column(db.String(50), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False, default=1)
     precio = db.Column(db.Float, nullable=False, default=0.0)
+    ingredientes_extra = db.Column(db.Text, nullable=True)  # JSON string con ingredientes extra
 
     def serializar(self) -> Dict[str, Any]:
-        return {"id": self.id, "pizza_id": self.pizza_id, "nombre": self.nombre, "tamano": self.tamano, "cantidad": self.cantidad, "precio": self.precio}
+        extras = []
+        if self.ingredientes_extra:
+            try:
+                extras = json.loads(self.ingredientes_extra)
+            except:
+                extras = []
+        return {
+            "id": self.id, 
+            "pizza_id": self.pizza_id, 
+            "nombre": self.nombre, 
+            "tamano": self.tamano, 
+            "cantidad": self.cantidad, 
+            "precio": self.precio,
+            "ingredientes_extra": extras
+        }
 
 class Receta(db.Model):
     __tablename__ = 'recetas'
@@ -219,6 +234,11 @@ with app.app_context():
             if "pizza_id" not in columnas_items:
                 conn.exec_driver_sql("ALTER TABLE items_pedido ADD COLUMN pizza_id INTEGER;")
                 print("[INFO] Migracion aplicada: items_pedido.pizza_id")
+            
+            # Migracion ItemPedido.ingredientes_extra
+            if "ingredientes_extra" not in columnas_items:
+                conn.exec_driver_sql("ALTER TABLE items_pedido ADD COLUMN ingredientes_extra TEXT;")
+                print("[INFO] Migracion aplicada: items_pedido.ingredientes_extra")
     except Exception as exc: print(f"[WARN] No se pudo verificar migracion: {exc}")
 
     # Admin por defecto
@@ -463,53 +483,144 @@ def delete_insumo(id):
 
 @app.route("/api/pedidos", methods=["POST"])
 def crear_pedido():
+    """
+    Crea un pedido con las siguientes mejoras:
+    1. Calcula automáticamente el precio total sumando ingredientes extra
+    2. Descuenta automáticamente los insumos del inventario
+    3. Valida que haya suficiente stock antes de crear el pedido
+    """
     datos = request.get_json() or {}
     try:
         usuario_id = datos.get("usuario_id")
-        subtotal = float(datos.get("subtotal", 0.0))
-        iva = float(datos.get("iva", 0.0))
-        total = float(datos.get("total", 0.0))
         fecha_hora = datos.get("fecha_hora") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        nuevo_pedido = Pedido(
-            usuario_id=usuario_id,
-            subtotal=subtotal,
-            iva=iva,
-            total=total,
-            fecha_hora=fecha_hora
-        )
-        db.session.add(nuevo_pedido)
-        db.session.flush() 
-
         articulos = datos.get("articulos", [])
+        
+        print(f"\n[PEDIDO] Iniciando creación de pedido para usuario {usuario_id}")
+        
+        # PASO 1: Calcular precio total y validar stock
+        subtotal_calculado = 0.0
+        items_procesados = []
+        
         for item in articulos:
-            # --- MEJORA AQUÍ: Buscamos el ID si viene None ---
+            # Obtener pizza_id
             id_catalogo = item.get("pizza_id")
-            
             if id_catalogo is None:
-                # Si el ID no viene del Angular, lo buscamos por nombre en la tabla Pizza
                 nombre_busqueda = item.get("nombre")
                 pizza_encontrada = Pizza.query.filter_by(nombre=nombre_busqueda).first()
                 if pizza_encontrada:
                     id_catalogo = pizza_encontrada.id
-                    print(f"[FIX] ID recuperado para {nombre_busqueda}: {id_catalogo}")
-
+                    print(f"[PEDIDO] ID recuperado para '{nombre_busqueda}': {id_catalogo}")
+            
+            # Calcular precio con ingredientes extra
+            precio_base = float(item.get("precio", 0.0))
+            ingredientes_extra = item.get("ingredientes_extra", [])
+            precio_extras = 0.0
+            
+            # Sumar precio de ingredientes extra (ejemplo: $2000 por ingrediente)
+            PRECIO_POR_EXTRA = 2000.0
+            if ingredientes_extra and len(ingredientes_extra) > 0:
+                precio_extras = len(ingredientes_extra) * PRECIO_POR_EXTRA
+                print(f"[PEDIDO] {len(ingredientes_extra)} ingredientes extra = ${precio_extras}")
+            
+            precio_total_item = precio_base + precio_extras
+            cantidad = int(item.get("cantidad", 1))
+            subtotal_item = precio_total_item * cantidad
+            subtotal_calculado += subtotal_item
+            
+            print(f"[PEDIDO] Item: {item.get('nombre')} - Base: ${precio_base} + Extras: ${precio_extras} = ${precio_total_item} x {cantidad} = ${subtotal_item}")
+            
+            # Guardar item procesado
+            items_procesados.append({
+                "pizza_id": id_catalogo,
+                "nombre": item.get("nombre"),
+                "tamano": item.get("tamano"),
+                "cantidad": cantidad,
+                "precio": precio_total_item,
+                "ingredientes_extra": ingredientes_extra
+            })
+            
+            # VALIDAR STOCK: Verificar que hay suficientes insumos
+            if id_catalogo:
+                recetas = Receta.query.filter_by(pizza_id=id_catalogo).all()
+                for receta in recetas:
+                    insumo = Insumo.query.get(receta.insumo_id)
+                    cantidad_necesaria = receta.cantidad_gastada * cantidad
+                    
+                    # Agregar cantidad extra si hay ingredientes extra del mismo tipo
+                    if ingredientes_extra and insumo.nombre in ingredientes_extra:
+                        # Duplicar la cantidad del insumo si está en extras
+                        cantidad_necesaria *= 1.5
+                    
+                    if insumo.cantidad_actual < cantidad_necesaria:
+                        return jsonify({
+                            "error": f"Stock insuficiente de {insumo.nombre}. Disponible: {insumo.cantidad_actual} {insumo.unidad_medida}, Necesario: {cantidad_necesaria} {insumo.unidad_medida}"
+                        }), 400
+        
+        # Calcular IVA y total
+        iva_calculado = subtotal_calculado * 0.19
+        total_calculado = subtotal_calculado + iva_calculado
+        
+        print(f"[PEDIDO] Subtotal: ${subtotal_calculado}, IVA: ${iva_calculado}, Total: ${total_calculado}")
+        
+        # PASO 2: Crear el pedido
+        nuevo_pedido = Pedido(
+            usuario_id=usuario_id,
+            subtotal=subtotal_calculado,
+            iva=iva_calculado,
+            total=total_calculado,
+            fecha_hora=fecha_hora,
+            estado="Pendiente"
+        )
+        db.session.add(nuevo_pedido)
+        db.session.flush()
+        
+        # PASO 3: Crear items y descontar inventario
+        print(f"[PEDIDO] Descontando inventario...")
+        for item_data in items_procesados:
+            # Crear item del pedido
             nuevo_item = ItemPedido(
                 pedido_id=nuevo_pedido.id,
-                pizza_id=id_catalogo, # <--- Ahora sí tendrá un número
-                nombre=item.get("nombre"),
-                tamano=item.get("tamano"),
-                cantidad=int(item.get("cantidad", 1)),
-                precio=float(item.get("precio", 0.0))
+                pizza_id=item_data["pizza_id"],
+                nombre=item_data["nombre"],
+                tamano=item_data["tamano"],
+                cantidad=item_data["cantidad"],
+                precio=item_data["precio"],
+                ingredientes_extra=json.dumps(item_data["ingredientes_extra"]) if item_data["ingredientes_extra"] else None
             )
             db.session.add(nuevo_item)
-
+            
+            # Descontar insumos del inventario
+            if item_data["pizza_id"]:
+                recetas = Receta.query.filter_by(pizza_id=item_data["pizza_id"]).all()
+                for receta in recetas:
+                    insumo = Insumo.query.get(receta.insumo_id)
+                    cantidad_a_descontar = receta.cantidad_gastada * item_data["cantidad"]
+                    
+                    # Si el insumo está en ingredientes extra, aumentar cantidad
+                    if item_data["ingredientes_extra"] and insumo.nombre in item_data["ingredientes_extra"]:
+                        cantidad_a_descontar *= 1.5
+                        print(f"[PEDIDO] Ingrediente extra detectado: {insumo.nombre} (cantidad aumentada)")
+                    
+                    insumo.cantidad_actual -= cantidad_a_descontar
+                    print(f"[PEDIDO] Descontado: {insumo.nombre} -{cantidad_a_descontar} {insumo.unidad_medida} (Restante: {insumo.cantidad_actual})")
+        
         db.session.commit()
-        return jsonify({"status": "ok", "mensaje": "Pedido guardado con éxito", "pedido_id": nuevo_pedido.id}), 201
+        print(f"[PEDIDO] ✅ Pedido #{nuevo_pedido.id} creado exitosamente\n")
+        
+        return jsonify({
+            "status": "ok", 
+            "mensaje": "Pedido creado con éxito", 
+            "pedido_id": nuevo_pedido.id,
+            "subtotal": round(subtotal_calculado, 2),
+            "iva": round(iva_calculado, 2),
+            "total": round(total_calculado, 2)
+        }), 201
 
     except Exception as e:
         db.session.rollback()
-        print(f"[ERROR] Error al guardar pedido: {e}")
+        print(f"[ERROR] Error al crear pedido: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"status": "error", "mensaje": str(e)}), 500
 
 @app.route("/api/pedidos", methods=["GET"])
@@ -610,7 +721,57 @@ def gestionar_receta(id):
     return jsonify({"receta": [r.to_dict() for r in recetas]})
 
 @app.route("/api/health", methods=["GET"])
-def estado_servidor(): return jsonify({"status": "ok"})
+def estado_servidor(): 
+    return jsonify({"status": "ok", "message": "Servidor funcionando"})
+
+# Esta es la que creamos con Milo Local
+@app.route("/status", methods=["GET"])
+def status_pizzeria():
+    return jsonify({
+        "status": "open",
+        "message": "La pizzería está abierta y el modelo local funciona",
+        "chef": "Milo"
+    })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+'''
+
+# ==========================================
+# Proyecto: PizzaOS - Backend
+# Creado por: Camilo Martinez
+# Fecha: 27 de abril de 2026
+# ==========================================
+
+from flask import Flask, jsonify, render_template
+from flask_cors import CORS
+from config import Config, db
+
+# 1. Inicialización de la App
+app = Flask(__name__)
+
+# 2. Configuración de CORS (Permisos para Angular)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+# 3. Cargar configuración de Base de Datos
+app.config.from_object(Config)
+db.init_app(app)
+
+# 4. Registro de Rutas (Blueprints)
+# Importamos después de inicializar la DB para evitar errores circulares
+from routes.pedido_routes import pedidos_blueprint
+app.register_blueprint(pedidos_blueprint) 
+
+# 5. Rutas de prueba
+@app.route('/')
+def index():
+    return "<h1>¡PizzaOS con Postgres Funcionando!</h1><p>Creado por Camilo Martinez</p>"
+
+# 6. Ejecución del Servidor
+if __name__ == '__main__':
+    with app.app_context():
+        # Importamos modelos para que SQLAlchemy cree las tablas en Postgres
+        import models 
+        db.create_all()
+       
+    app.run(debug=True, port=5000)
