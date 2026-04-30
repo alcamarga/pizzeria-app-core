@@ -11,11 +11,16 @@ export interface ArticuloPedido {
 export interface Pedido {
   id: number;
   usuario_id?: number;
-  fecha_hora: string;
-  articulos: ArticuloPedido[];
-  subtotal: number;
-  iva: number;
+  cliente?: string;
+  fecha_hora?: string;
+  fecha?: string;
+  articulos?: ArticuloPedido[];
+  pizzas?: string;
+  subtotal?: number;
+  iva?: number;
   total: number;
+  estado?: string;
+  direccion?: string;
 }
 
 export interface CargaPedido {

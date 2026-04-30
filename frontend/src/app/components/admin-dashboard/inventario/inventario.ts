@@ -20,9 +20,9 @@ export class InventarioComponent implements OnInit {
 
   // Control para nuevo Insumo | Control for new Supply
   nuevoInsumoVisibilidad = false;
-  nuevoInsumo: Partial<Insumo> = { nombre: '', cantidad_actual: 0, unidad_medida: 'kg', stock_minimo: 0 };
+  nuevoInsumo: Partial<Insumo> = { nombre: '', cantidad: 0, unidad_medida: 'kg', stock_minimo: 0 };
 
-  constructor(private insumosService: InsumosService) {}
+  constructor(private insumosService: InsumosService) { }
 
   ngOnInit(): void {
     // Cargar los insumos al iniciar el componente | Load supplies on component init
@@ -46,7 +46,7 @@ export class InventarioComponent implements OnInit {
   // Comienza la edición interactiva de stock | Starts stock interactive editing
   iniciarEdicion(insumo: Insumo): void {
     this.editandoId = insumo.id;
-    this.cantidadEditada = insumo.cantidad_actual;
+    this.cantidadEditada = insumo.cantidad;
   }
 
   // Guarda y actualiza la UI via Signal | Saves and updates UI via Signal
@@ -54,8 +54,8 @@ export class InventarioComponent implements OnInit {
     this.insumosService.updateInsumo(id, this.cantidadEditada).subscribe({
       next: (insumoActualizado) => {
         // Refresco automático actualizando el arreglo del Signal | Auto-refresh updating Signal array
-        this.insumos.update(actuales => 
-          actuales.map(i => i.id === id ? { ...i, cantidad_actual: insumoActualizado.cantidad_actual } : i)
+        this.insumos.update(actuales =>
+          actuales.map(i => i.id === id ? { ...i, cantidad: insumoActualizado.cantidad } : i)
         );
         this.editandoId = null;
       },
@@ -77,16 +77,16 @@ export class InventarioComponent implements OnInit {
   }
 
   agregarInsumo(): void {
-    if(!this.nuevoInsumo.nombre) {
+    if (!this.nuevoInsumo.nombre) {
       alert("El nombre es obligatorio");
       return;
     }
-    
+
     this.insumosService.createInsumo(this.nuevoInsumo).subscribe({
       next: (creado) => {
         // Añade al Signal actual | Append to current Signal
         this.insumos.update(actuales => [...actuales, creado]);
-        this.nuevoInsumo = { nombre: '', cantidad_actual: 0, unidad_medida: 'kg', stock_minimo: 0 };
+        this.nuevoInsumo = { nombre: '', cantidad: 0, unidad_medida: 'kg', stock_minimo: 0 };
         this.nuevoInsumoVisibilidad = false;
       },
       error: (err) => {

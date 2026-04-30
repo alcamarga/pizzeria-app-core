@@ -1,76 +1,75 @@
 <!-- Contenedor principal del inventario | Main inventory container -->
 <div class="inventario-container">
   <h2 class="inventario-title">Inventario de Insumos</h2>
-  
+
   <div class="table-wrapper">
     <table class="inventario-table">
       <thead>
         <tr>
           <th>Nombre</th>
-          <th>Cantidad Actual</th>
+          <th>Cantidad</th>
           <th>Unidad</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <!-- Iteración de tabla con ngFor sobre la señal insumos | Table iteration using ngFor over insumos signal -->
         <tr *ngFor="let insumo of insumos()">
           <td>{{ insumo.nombre }}</td>
-          <td>
-            <div *ngIf="editandoId === insumo.id; else mostrarCantidad" class="d-flex align-items-center">
-              <input type="number" class="form-control form-control-sm text-center me-2 bg-dark border-warning" style="width: 80px; color: white !important; font-weight: bold;" [(ngModel)]="cantidadEditada" />
-              <button class="btn btn-sm btn-success p-1" (click)="guardarEdicion(insumo.id)">✅</button>
-              <button class="btn btn-sm btn-outline-light p-1 ms-1" (click)="cancelarEdicion()">❌</button>
-            </div>
-            <ng-template #mostrarCantidad>
-              <span class="d-flex align-items-center fw-bold text-crema" style="cursor: pointer; transition: 0.2s;" (click)="iniciarEdicion(insumo)" title="Clic para editar">
-                {{ insumo.cantidad_actual }} 
-                <span class="ms-2 opacity-50 small">✏️</span>
-              </span>
-            </ng-template>
-          </td>
-          <td>{{ insumo.unidad_medida }}</td>
-          <td>
-            <!-- Alerta visual de stock | Stock visual alert -->
-            <span *ngIf="insumo.cantidad_actual < insumo.stock_minimo" class="badge danger">Bajo Stock</span>
-            <span *ngIf="insumo.cantidad_actual >= insumo.stock_minimo" class="badge ok">Óptimo</span>
-          </td>
-          <td class="text-center">
-            <button class="btn btn-sm btn-outline-danger" title="Eliminar Insumo" (click)="eliminarInsumo(insumo.id)">🗑️</button>
-          </td>
-        </tr>
+          <td>{{ insumo.cantidad }}</td>
+          <td>{{ insumo.unidad_medida || 'Und' }}</td>
 
-        <!-- Diseño en caso de no haber datos | UI for no data case -->
-        <tr *ngIf="insumos().length === 0">
-          <td colspan="5" class="no-data text-center p-4">No se encontraron insumos cargados.</td>
+          <!-- Sección de Estado con los arreglos de stock -->
+          <td>
+            <span *ngIf="insumo.cantidad < (insumo.stock_minimo ?? 0)" class="badge-danger">
+              Stock Bajo
+            </span>
+            <span *ngIf="insumo.cantidad >= (insumo.stock_minimo ?? 0)" class="badge-success">
+              Óptimo
+            </span>
+          </td>
+
+          <!-- Acciones -->
+          <td>
+            <button (click)="iniciarEdicion(insumo)" class="btn btn-sm btn-primary">Editar</button>
+            <button (click)="eliminarInsumo(insumo.id)" class="btn btn-sm btn-danger ml-1">Borrar</button>
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
-  
+
   <!-- Add new Item UI -->
   <div class="mt-4">
-    <button class="btn btn-warning fw-bold mb-3" (click)="toggleNuevoInsumo()" *ngIf="!nuevoInsumoVisibilidad">➕ Nuevo Insumo</button>
-    
-    <div class="card p-3 border-warning bg-dark" *ngIf="nuevoInsumoVisibilidad" style="max-width: 800px; border-radius: 8px;">
+    <button class="btn btn-warning fw-bold mb-3" (click)="toggleNuevoInsumo()" *ngIf="!nuevoInsumoVisibilidad">➕ Nuevo
+      Insumo</button>
+
+    <div class="card p-3 border-warning bg-dark" *ngIf="nuevoInsumoVisibilidad"
+      style="max-width: 800px; border-radius: 8px;">
       <h5 class="text-crema mb-3">Registrar Insumo</h5>
       <div class="row g-2 align-items-end">
         <div class="col-md-3">
           <label class="form-label text-white small mb-1">Nombre</label>
-          <input class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Ej: Peperoni" [(ngModel)]="nuevoInsumo.nombre">
+          <input class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Ej: Peperoni"
+            [(ngModel)]="nuevoInsumo.nombre">
         </div>
         <div class="col-md-2">
           <label class="form-label text-white small mb-1">Cantidad Inicial</label>
-          <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevoInsumo.cantidad_actual">
+          <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary"
+            [(ngModel)]="nuevoInsumo.cantidad">
         </div>
         <div class="col-md-2">
           <label class="form-label text-white small mb-1">Unidad</label>
-          <input class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="kg, L, uds" [(ngModel)]="nuevoInsumo.unidad_medida">
+          <select class="form-select form-select-sm bg-dark text-white border-secondary" [(ngModel)]="nuevoInsumo.unidad_medida">
+            <option value="gr">gr</option>
+            <option value="ml">ml</option>
+            <option value="uds">uds</option>
+          </select>
         </div>
         <div class="col-md-2">
           <label class="form-label text-white small mb-1">Stock Mín.</label>
-          <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevoInsumo.stock_minimo">
+          <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary"
+            [(ngModel)]="nuevoInsumo.stock_minimo">
         </div>
         <div class="col-md-3 d-flex gap-2">
           <button class="btn btn-sm btn-success fw-bold w-100" (click)="agregarInsumo()">Guardar</button>

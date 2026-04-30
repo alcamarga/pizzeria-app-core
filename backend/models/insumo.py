@@ -8,6 +8,8 @@ class Insumo(db.Model):
     nombre = db.Column(db.String(255), nullable=False)
     precio = db.Column(db.Numeric(10, 2), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
+    unidad_medida = db.Column(db.String(20), nullable=True, default='gr')
+    stock_minimo = db.Column(db.Float, nullable=True, default=0.0)
 
     def __repr__(self):
         return f'<Insumo {self.nombre}>'

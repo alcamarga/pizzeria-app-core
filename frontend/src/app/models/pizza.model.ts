@@ -6,9 +6,11 @@ export interface Pizza {
   nombre: string;
   descripcion: string;
   categoria: string;
-  precio_1: number;
+  precio_1?: number;
   precio_2?: number;
   precio_3?: number;
+  precio?: number;
+  cantidad?: number;
   imagen?: string;
-  activo: boolean;
+  activo?: boolean;
 }

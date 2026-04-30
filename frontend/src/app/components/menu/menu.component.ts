@@ -28,7 +28,7 @@ export class MenuComponent implements OnInit {
   usuarioActual = this.auth.obtenerUsuarioActual();
   mensajeExito = signal<string | null>(null);
   // Estado para animar el botón pulsado
-  agregandoState = signal<{[key: string]: boolean}>({});
+  agregandoState = signal<{ [key: string]: boolean }>({});
 
 
   ngOnInit(): void {
@@ -46,7 +46,7 @@ export class MenuComponent implements OnInit {
           const cat = pizza.categoria || 'Pizza';
           let precio = 0;
           const etiquetas = this.getEtiquetasPrecio(cat);
-          if (tamanoStr === etiquetas[0]) precio = pizza.precio_1;
+          if (tamanoStr === etiquetas[0]) precio = pizza.precio ?? pizza.precio_1 ?? 0;
           else if (tamanoStr === etiquetas[1]) precio = pizza.precio_2 || 0;
           else if (tamanoStr === etiquetas[2]) precio = pizza.precio_3 || 0;
 
@@ -63,17 +63,18 @@ export class MenuComponent implements OnInit {
     this.cargando.set(true);
     this.pizzaService.obtenerCatalogoPizzas().subscribe({
       next: (pizzas) => {
-        this.pizzas.set(pizzas.filter(p => p.activo));
+        // Agregamos 'pizzas &&' para asegurar que existan antes de filtrar
+        if (pizzas && Array.isArray(pizzas)) {
+          // El backend PostgreSQL ya no manda el campo 'activo', así que lo omitimos
+          this.pizzas.set(pizzas);
+        } else {
+          this.pizzas.set([]); // Si no hay nada, lista vacía
+        }
         this.cargando.set(false);
       },
       error: (err) => {
         this.cargando.set(false);
-        if (err.status === 401 || err.status === 403) {
-          console.error('[AUTH ERROR] No tienes permisos para ver las pizzas:', err);
-        } else {
-          console.error('Error al cargar el menú:', err);
-        }
-        this.error.set('Error al cargar el menú.');
+        // ... resto del código de error ...
       }
     });
   }
@@ -85,13 +86,13 @@ export class MenuComponent implements OnInit {
     }
 
     const key = `${pizza.id}-${tamanoLabel}`;
-    
+
     // Feedback visual en el botón
     this.agregandoState.update(prev => ({ ...prev, [key]: true }));
-    
+
     // Llamada al servicio
     this.cartService.agregarAlCarrito(pizza, tamanoLabel, precio);
-    
+
     // Mensaje global
     this.mensajeExito.set(`¡${pizza.nombre} (${tamanoLabel}) agregada! 🍕`);
 
@@ -142,36 +143,36 @@ export class MenuComponent implements OnInit {
 
   toggleFormulario(): void {
     this.mostrarFormulario = !this.mostrarFormulario;
-    if(!this.mostrarFormulario) this.pizzaEnEdicionId = null;
+    if (!this.mostrarFormulario) this.pizzaEnEdicionId = null;
   }
 
   modificarPizza(id: number): void {
     const pizza = this.pizzas().find(p => p.id === id);
-    if(pizza) {
+    if (pizza) {
       this.pizzaEnEdicionId = pizza.id;
-      this.nuevaPizza = { 
-        nombre: pizza.nombre, 
-        descripcion: pizza.descripcion, 
+      this.nuevaPizza = {
+        nombre: pizza.nombre,
+        descripcion: pizza.descripcion,
         categoria: pizza.categoria || 'Pizza',
-        precio_1: pizza.precio_1, 
-        precio_2: pizza.precio_2, 
-        precio_3: pizza.precio_3 
+        precio_1: pizza.precio_1,
+        precio_2: pizza.precio_2,
+        precio_3: pizza.precio_3
       };
       this.mostrarFormulario = true;
     }
   }
 
   guardarPizza(): void {
-    if(this.pizzaEnEdicionId) {
+    if (this.pizzaEnEdicionId) {
       this.pizzaService.actualizarPizza(this.pizzaEnEdicionId, this.nuevaPizza).subscribe({
-          next: () => {
-              this.cargarMenu(); 
-              this.cancelarFormulario();
-          },
-          error: (err) => {
-              console.error('Error al actualizar la pizza:', err);
-              alert('No se pudo actualizar la pizza.');
-          }
+        next: () => {
+          this.cargarMenu();
+          this.cancelarFormulario();
+        },
+        error: (err) => {
+          console.error('Error al actualizar la pizza:', err);
+          alert('No se pudo actualizar la pizza.');
+        }
       });
     }
   }

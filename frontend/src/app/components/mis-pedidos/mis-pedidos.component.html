@@ -20,7 +20,7 @@
     <div *ngFor="let pedido of pedidos" class="pedido-card">
       <div class="pedido-header">
         <span class="pedido-id">Orden #{{ pedido.id }}</span>
-        <span [class]="'badge ' + getBadgeClass(pedido.estado)">{{ pedido.estado }}</span>
+        <span [class]="'badge ' + getBadgeClass(pedido.estado || 'Pendiente')">{{ pedido.estado || 'Pendiente' }}</span>
       </div>
       
       <div class="pedido-body">

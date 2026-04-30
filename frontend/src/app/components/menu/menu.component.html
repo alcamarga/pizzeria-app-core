@@ -1,7 +1,7 @@
-<style>
+  <style>
   .menu-page {
     /* Usamos filter: brightness para aclarar la imagen sin capas negras */
-    background-image: url('/assets/images/pizzeria-app-core.jpg');
+    background-image: url('/assets/pizzeria-app-core.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -87,7 +87,7 @@
               
               <div class="col-md-3" *ngIf="mostrarCampoPrecioForm(1)">
                 <label class="form-label text-warning small mb-1">{{ getEtiquetaPrecioForm(1) }}</label>
-                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.precio_1" placeholder="$">
+                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" [(ngModel)]="nuevaPizza.precio" placeholder="$">
               </div>
               <div class="col-md-3" *ngIf="mostrarCampoPrecioForm(2)">
                 <label class="form-label text-warning small mb-1">{{ getEtiquetaPrecioForm(2) }}</label>
@@ -118,16 +118,17 @@
                   </div>
                 }
               </div>
-              <p class="small opacity-75 mb-4">{{ pizza.descripcion }}</p>
+              <p class="small opacity-75 mb-2">{{ pizza.descripcion || 'Sin descripción' }}</p>
+              <p class="small opacity-75 mb-4 text-info">Disponibles: {{ pizza.cantidad !== undefined ? pizza.cantidad : 'N/A' }}</p>
 
-              <!-- Precio 1 -->
-              <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-white bg-opacity-10 border border-white border-opacity-10" *ngIf="pizza.precio_1">
-                <span class="small">{{ getEtiquetasPrecio(pizza.categoria || 'Pizza')[0] }}: <b class="text-warning">${{ pizza.precio_1 | number }}</b></span>
+              <!-- Precio -->
+              <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-white bg-opacity-10 border border-white border-opacity-10" *ngIf="pizza.precio !== undefined || pizza.precio_1 !== undefined">
+                <span class="small">{{ getEtiquetasPrecio(pizza.categoria || 'Pizza')[0] }}: <b class="text-warning">${{ (pizza.precio !== undefined ? pizza.precio : pizza.precio_1) | number }}</b></span>
                 @if (usuarioActual?.rol !== 'admin') {
                   <button class="btn btn-sm transition-all" 
                           [class.btn-warning]="!agregandoState()[pizza.id + '-' + getEtiquetasPrecio(pizza.categoria || 'Pizza')[0]]"
                           [class.btn-success]="agregandoState()[pizza.id + '-' + getEtiquetasPrecio(pizza.categoria || 'Pizza')[0]]"
-                          (click)="agregarAlCarrito(pizza, getEtiquetasPrecio(pizza.categoria || 'Pizza')[0], pizza.precio_1)">
+                          (click)="agregarAlCarrito(pizza, getEtiquetasPrecio(pizza.categoria || 'Pizza')[0], pizza.precio !== undefined ? pizza.precio : (pizza.precio_1 || 0))">
                     {{ agregandoState()[pizza.id + '-' + getEtiquetasPrecio(pizza.categoria || 'Pizza')[0]] ? '✅ ¡Agregado!' : '🛒 Comprar' }}
                   </button>
                 }

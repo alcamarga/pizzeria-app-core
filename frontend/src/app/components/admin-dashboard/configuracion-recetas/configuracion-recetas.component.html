@@ -25,28 +25,34 @@
         <button class="btn-save" (click)="guardarReceta()">Guardar Cambios</button>
       </div>
 
-      <table class="recipe-table">
-        <thead>
-          <tr>
-            <th>Insumo</th>
-            <th>Cantidad</th>
-            <th>Unidad</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of recetaActual; let i = index">
-            <td>{{ r.insumo_nombre }}</td>
-            <td>
-              <input type="number" [(ngModel)]="r.cantidad_gastada" class="qty-input">
-            </td>
-            <td>{{ r.unidad_medida }}</td>
-            <td>
-              <button class="btn-delete" (click)="quitarIngrediente(i)">🗑️</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div *ngIf="recetaActual.length > 0">
+        <table class="recipe-table">
+          <thead>
+            <tr>
+              <th>Insumo</th>
+              <th>Cantidad</th>
+              <th>Unidad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of recetaActual; let i = index">
+              <td>{{ r.insumo_nombre }}</td>
+              <td>
+                <input type="number" [(ngModel)]="r.cantidad_gastada" class="qty-input">
+              </td>
+              <td>{{ r.unidad_medida }}</td>
+              <td>
+                <button class="btn-delete" (click)="quitarIngrediente(i)">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="empty-state" *ngIf="recetaActual.length === 0" style="padding: 2rem; text-align: center; color: #a99d91; background: #1a1a1a; border-radius: 8px; margin-bottom: 2rem;">
+        <p>No hay ingredientes asignados a esta receta.</p>
+      </div>
 
       <!-- Agregar nuevo ingrediente -->
       <div class="add-ingredient">

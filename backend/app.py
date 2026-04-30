@@ -750,22 +750,33 @@ from config import Config, db
 # 1. Inicialización de la App
 app = Flask(__name__)
 
-# 2. Configuración de CORS (Permisos para Angular)
-CORS(app, resources={r"/*": {"origins": "*"}})
+# 2. Configuración de CORS
+from flask_cors import CORS
+
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:4200", "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 # 3. Cargar configuración de Base de Datos
 app.config.from_object(Config)
 db.init_app(app)
 
-# 4. Registro de Rutas (Blueprints)
-# Importamos después de inicializar la DB para evitar errores circulares
+# 4. Registro de Rutas
 from routes.pedido_routes import pedidos_blueprint
-app.register_blueprint(pedidos_blueprint) 
+app.register_blueprint(pedidos_blueprint, url_prefix='/api')
+
+ 
 
 # 5. Rutas de prueba
 @app.route('/')
 def index():
     return "<h1>¡PizzaOS con Postgres Funcionando!</h1><p>Creado por Camilo Martinez</p>"
+
+from flask_cors import cross_origin
+@app.route('/api/usuarios', methods=['GET', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def get_usuarios():
+    # Endpoint temporal para evitar CORS/404 mientras se migra el modelo Usuario a Postgres
+    return jsonify({"usuarios": []}), 200
 
 # 6. Ejecución del Servidor
 if __name__ == '__main__':

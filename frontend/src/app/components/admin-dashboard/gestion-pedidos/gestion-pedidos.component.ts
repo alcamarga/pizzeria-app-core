@@ -1,9 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrderService, Pedido } from '../../../services/order.service';
 import { FormsModule } from '@angular/forms';
 import { catchError } from 'rxjs/operators';
-import { throwError } from 'rxjs';
+import { throwError, Subscription } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
@@ -13,7 +13,7 @@ import { AuthService } from '../../../services/auth.service';
   templateUrl: './gestion-pedidos.component.html',
   styleUrls: ['./gestion-pedidos.component.css']
 })
-export class GestionPedidosComponent implements OnInit {
+export class GestionPedidosComponent implements OnInit, OnDestroy {
   private orderService = inject(OrderService);
   pedidos: Pedido[] = [];
   cargando = true;
@@ -25,10 +25,11 @@ export class GestionPedidosComponent implements OnInit {
   estadosDisponibles = ['Pendiente', 'Preparando', 'Enviado', 'Entregado', 'Cancelado'];
 
   private authService = inject(AuthService);
+  private sub: Subscription | null = null;
 
   ngOnInit(): void {
     // Sincronización de Carga: Solo disparar si hay sesión activa
-    this.authService.sesionActiva$.subscribe(sesion => {
+    this.sub = this.authService.sesionActiva$.subscribe(sesion => {
       if (sesion) {
         console.log('[GestionPedidos] Sesión detectada, cargando pedidos...');
         this.cargarTodosLosPedidos();
@@ -36,6 +37,12 @@ export class GestionPedidosComponent implements OnInit {
         console.warn('[GestionPedidos] Esperando sesión activa para cargar datos.');
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.sub) {
+      this.sub.unsubscribe();
+    }
   }
 
   cargarTodosLosPedidos(): void {

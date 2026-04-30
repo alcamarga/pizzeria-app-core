@@ -23,19 +23,19 @@
       <tbody>
         <tr *ngFor="let p of pedidos">
           <td>#{{ p.id }}</td>
-          <td>{{ p.fecha_hora }}</td>
-          <td>User #{{ p.usuario_id }}</td>
+          <td>{{ p.fecha }}</td>
+          <td>User #{{ p.cliente }}</td>
           <td class="price">{{ p.total | currency:'USD':'symbol':'1.0-0' }}</td>
           <td>
             <div class="articulos-cell">
-              <span *ngFor="let a of p.articulos">{{ a.cantidad }}x {{ a.nombre }}</span>
+              <span>{{ p.pizzas }}</span>
             </div>
           </td>
           <td>
             <select 
               [(ngModel)]="p.estado" 
-              (change)="cambiarEstado(p.id, p.estado)"
-              [class]="'status-select ' + p.estado.toLowerCase()">
+              (change)="cambiarEstado(p.id, p.estado || 'Pendiente')"
+              [class]="'status-select ' + (p.estado ? p.estado.toLowerCase() : 'pendiente')">
               <option *ngFor="let st of estadosDisponibles" [value]="st">{{ st }}</option>
             </select>
           </td>

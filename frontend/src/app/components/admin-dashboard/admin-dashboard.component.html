@@ -1,6 +1,6 @@
 <div class="dashboard-container">
   <h1>Panel de Administrador</h1>
-  
+
   <div class="row g-4 mb-4" *ngIf="usuario?.rol === 'admin'">
     <div class="col-md-4">
       <div class="stat-card p-3 d-flex align-items-center">
@@ -30,47 +30,88 @@
       </div>
     </div>
   </div>
-
-  <div class="tabs-container mt-4 mb-3 p-3" style="background: rgba(0,0,0,0.6); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3);">
+  <!-- Nueva Sección: Tabla de Pedidos Recientes -->
+  <div class="row mt-4" *ngIf="usuario?.rol === 'admin'">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold">Gestión de Pedidos Recientes</h5>
+          <button class="btn btn-primary btn-sm">Actualizar</button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Cliente</th>
+                  <th>Dirección de Entrega</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Aquí usaremos la lógica de Angular para listar tus pedidos de la DB -->
+                <tr *ngFor="let pedido of pedidosRecientes">
+                  <td class="fw-bold">#{{ pedido.id }}</td>
+                  <td>{{ pedido.cliente_nombre }}</td>
+                  <td>{{ pedido.direccion }}</td>
+                  <td>{{ pedido.total | currency }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="{
+                                        'bg-warning': pedido.estado === 'Pendiente',
+                                        'bg-info': pedido.estado === 'Preparando',
+                                        'bg-success': pedido.estado === 'Enviado'
+                                    }">{{ pedido.estado }}</span>
+                  </td>
+                  <td>
+                    <button class="btn btn-outline-secondary btn-sm">Ver Detalle</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tabs-container mt-4 mb-3 p-3"
+    style="background: rgba(0,0,0,0.6); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3);">
     <ul class="nav nav-tabs border-0">
       <li class="nav-item" *ngIf="usuario?.rol === 'admin'">
-        <a class="nav-link fw-bold" 
-           [ngClass]="pestanaActiva === 'menu' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
-           (click)="cambiarPestana('menu')" 
-           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
-           🍕 Gestión de Menú
+        <a class="nav-link fw-bold"
+          [ngClass]="pestanaActiva === 'menu' ? 'text-dark bg-warning border-warning' : 'text-warning'"
+          (click)="cambiarPestana('menu')" style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+          🍕 Gestión de Menú
         </a>
       </li>
       <li class="nav-item ms-2" *ngIf="usuario?.rol === 'admin'">
-        <a class="nav-link fw-bold" 
-           [ngClass]="pestanaActiva === 'insumos' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
-           (click)="cambiarPestana('insumos')" 
-           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
-           🧀 Inventario de Insumos
+        <a class="nav-link fw-bold"
+          [ngClass]="pestanaActiva === 'insumos' ? 'text-dark bg-warning border-warning' : 'text-warning'"
+          (click)="cambiarPestana('insumos')" style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+          🧀 Inventario de Insumos
         </a>
       </li>
-       <li class="nav-item ms-2">
-        <a class="nav-link fw-bold" 
-           [ngClass]="pestanaActiva === 'pedidos' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
-           (click)="cambiarPestana('pedidos')" 
-           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
-           📋 Gestión de Pedidos
-        </a>
-      </li>
-      <li class="nav-item ms-2" *ngIf="usuario?.rol === 'admin'">
-        <a class="nav-link fw-bold" 
-           [ngClass]="pestanaActiva === 'recetas' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
-           (click)="cambiarPestana('recetas')" 
-           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
-           🥣 Configuración de Recetas
+      <li class="nav-item ms-2">
+        <a class="nav-link fw-bold"
+          [ngClass]="pestanaActiva === 'pedidos' ? 'text-dark bg-warning border-warning' : 'text-warning'"
+          (click)="cambiarPestana('pedidos')" style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+          📋 Gestión de Pedidos
         </a>
       </li>
       <li class="nav-item ms-2" *ngIf="usuario?.rol === 'admin'">
-        <a class="nav-link fw-bold" 
-           [ngClass]="pestanaActiva === 'personal' ? 'text-dark bg-warning border-warning' : 'text-warning'" 
-           (click)="cambiarPestana('personal')" 
-           style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
-           👥 Gestión de Personal
+        <a class="nav-link fw-bold"
+          [ngClass]="pestanaActiva === 'recetas' ? 'text-dark bg-warning border-warning' : 'text-warning'"
+          (click)="cambiarPestana('recetas')" style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+          🥣 Configuración de Recetas
+        </a>
+      </li>
+      <li class="nav-item ms-2" *ngIf="usuario?.rol === 'admin'">
+        <a class="nav-link fw-bold"
+          [ngClass]="pestanaActiva === 'personal' ? 'text-dark bg-warning border-warning' : 'text-warning'"
+          (click)="cambiarPestana('personal')" style="cursor: pointer; font-size: 1.1rem; border-radius: 8px 8px 0 0;">
+          👥 Gestión de Personal
         </a>
       </li>
     </ul>
@@ -81,7 +122,7 @@
       <!-- Componente para las Pizzas y 3 precios | Pizza catalog component -->
       <app-dashboard></app-dashboard>
     </div>
-    
+
     <div *ngIf="pestanaActiva === 'insumos'">
       <!-- Componente para harina, queso, etc. | Supplies inventory component -->
       <app-inventario></app-inventario>

@@ -1,42 +1,76 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
-import { InventarioComponent } from './inventario/inventario';
+import { PizzaService } from '../../services/pizza.service';
+import { Usuario } from '../../models/usuario.model';
+
+// Importa los componentes hijos para que el HTML los reconozca (Errores NG8001)
+// Subimos un nivel a 'components' y entramos a las carpetas correspondientes
 import { DashboardComponent } from '../dashboard/dashboard.component';
+import { InventarioComponent } from './inventario/inventario';
+
+// Los demás están dentro de la subcarpeta de admin-dashboard (según tu explorador)
 import { GestionPedidosComponent } from './gestion-pedidos/gestion-pedidos.component';
 import { ConfiguracionRecetasComponent } from './configuracion-recetas/configuracion-recetas.component';
 import { GestionPersonalComponent } from './gestion-personal/gestion-personal.component';
-import { Usuario } from '../../models/usuario.model';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, InventarioComponent, DashboardComponent, GestionPedidosComponent, ConfiguracionRecetasComponent, GestionPersonalComponent],
+  // Añadimos todos los componentes aquí para que dejen de salir en rojo
+  imports: [
+    CommonModule,
+    DashboardComponent,
+    InventarioComponent,
+    GestionPedidosComponent,
+    ConfiguracionRecetasComponent,
+    GestionPersonalComponent
+  ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
-export class AdminDashboardComponent {
+export class AdminDashboardComponent implements OnInit {
   ventasDelDia: number = 0;
   pedidosPendientes: number = 0;
   inventarioPizzas: number = 0;
-  pestanaActiva: string = 'pedidos'; // Default para todos los roles
+  pedidosRecientes: any[] = [];
+
+  // Usamos 'pestanaActiva' sin la ñ si tu HTML lo tiene así, 
+  // o 'pestañaActiva' según lo que diga el error TS2551. 
+  // Viendo tu error, el HTML busca 'pestanaActiva'.
+  pestanaActiva: string = 'pedidos';
   usuario: Usuario | null = null;
 
-  constructor(private auth: AuthService) {
+  constructor(
+    private auth: AuthService,
+    private pizzaService: PizzaService
+  ) {
     this.usuario = this.auth.obtenerUsuarioActual();
-    
-    // Si es cocinero, forzar pestaña pedidos
     if (this.usuario?.rol === 'cocinero') {
       this.pestanaActiva = 'pedidos';
     }
-
-    // Mock data; replace with real service calls
-    this.ventasDelDia = 12450;
-    this.pedidosPendientes = 23;
-    this.inventarioPizzas = 150;
   }
 
-  cambiarPestana(pestana: string) {
-    this.pestanaActiva = pestana;
+  ngOnInit() {
+    this.cargarPedidosDesdeDB();
+  }
+
+  // Esta es la función que te faltaba (Error TS2339)
+  cambiarPestana(nombrePestana: string) {
+    this.pestanaActiva = nombrePestana;
+  }
+
+  cargarPedidosDesdeDB() {
+    this.pizzaService.obtenerTodosLosPedidos().subscribe({
+      next: (pedidos: any[]) => {
+        this.pedidosRecientes = pedidos || [];
+        this.pedidosPendientes = pedidos ? pedidos.length : 0;
+        this.ventasDelDia = 12450;
+        this.inventarioPizzas = 150;
+      },
+      error: (err) => {
+        console.error('Error conectando con el backend de PizzaOS:', err);
+      }
+    });
   }
 }

@@ -12,4 +12,7 @@ class Pedido(db.Model):
     pizzas = db.Column(db.Text, nullable=False)
     direccion = db.Column(db.String(200), nullable=False)
     total = db.Column(db.Numeric(10, 2), nullable=True)
+    estado = db.Column(db.String(50), nullable=True, default="Pendiente")
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
+    articulos_json = db.Column(db.Text, nullable=True) # Guarda el JSON de los articulos
+    inventario_deducido = db.Column(db.Boolean, default=False)

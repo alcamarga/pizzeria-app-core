@@ -12,13 +12,16 @@ export interface ItemPedido {
 
 export interface Pedido {
   id: number;
-  usuario_id: number;
-  fecha_hora: string;
-  subtotal: number;
-  iva: number;
+  usuario_id?: number;
+  cliente?: string;
+  fecha_hora?: string;
+  fecha?: string;
+  subtotal?: number;
+  iva?: number;
   total: number;
-  estado: string;
-  articulos: ItemPedido[];
+  estado?: string;
+  articulos?: ItemPedido[];
+  pizzas?: string;
 }
 
 @Injectable({ providedIn: 'root' })

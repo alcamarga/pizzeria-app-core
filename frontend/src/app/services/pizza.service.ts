@@ -32,9 +32,7 @@ export class PizzaService {
 
   // Obtener catálogo completo de pizzas | Get full pizza catalog
   obtenerCatalogoPizzas(): Observable<Pizza[]> {
-    return this.http.get<RespuestaPizzas>(URL_API_PIZZAS).pipe(
-      map((respuesta: RespuestaPizzas) => respuesta.pizzas)
-    );
+    return this.http.get<Pizza[]>(URL_API_PIZZAS);
   }
 
   // Enviar nuevo pedido a la base de datos | Send new order to database
