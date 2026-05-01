@@ -46,7 +46,7 @@ export class MenuComponent implements OnInit {
           const cat = pizza.categoria || 'Pizza';
           let precio = 0;
           const etiquetas = this.getEtiquetasPrecio(cat);
-          if (tamanoStr === etiquetas[0]) precio = pizza.precio ?? pizza.precio_1 ?? 0;
+          if (tamanoStr === etiquetas[0]) precio = pizza.precio_1 ?? 0;
           else if (tamanoStr === etiquetas[1]) precio = pizza.precio_2 || 0;
           else if (tamanoStr === etiquetas[2]) precio = pizza.precio_3 || 0;
 

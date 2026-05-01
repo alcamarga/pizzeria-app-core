@@ -18,7 +18,8 @@
 }
 
 .login-wrapper {
-  background: linear-gradient(135deg, var(--color-crema) 0%, var(--color-oro-claro) 100%);
+  background: url('/assets/pizzeria-app-core.jpg') center/cover fixed,
+              linear-gradient(135deg, var(--color-crema) 0%, var(--color-oro-claro) 100%);
   min-height: 100vh;
   padding: 20px;
 }

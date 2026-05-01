@@ -13,6 +13,7 @@ import { InventarioComponent } from './inventario/inventario';
 import { GestionPedidosComponent } from './gestion-pedidos/gestion-pedidos.component';
 import { ConfiguracionRecetasComponent } from './configuracion-recetas/configuracion-recetas.component';
 import { GestionPersonalComponent } from './gestion-personal/gestion-personal.component';
+import { RentabilidadComponent } from './rentabilidad/rentabilidad.component';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -24,7 +25,8 @@ import { GestionPersonalComponent } from './gestion-personal/gestion-personal.co
     InventarioComponent,
     GestionPedidosComponent,
     ConfiguracionRecetasComponent,
-    GestionPersonalComponent
+    GestionPersonalComponent,
+    RentabilidadComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']

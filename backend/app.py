@@ -753,8 +753,23 @@ app = Flask(__name__)
 # 2. Configuración de CORS
 from flask_cors import CORS
 
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:4200", "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
+CORS(app, resources={r"/api/*": {
+    "origins": "http://localhost:4200",
+    "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}}, supports_credentials=True)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+# Asegurar headers CORS en todas las respuestas, incluyendo preflight OPTIONS
+from flask import Response, request as flask_request
+
+@app.after_request
+def agregar_headers_cors(respuesta: Response) -> Response:
+    respuesta.headers["Access-Control-Allow-Origin"] = "http://localhost:4200"
+    respuesta.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    respuesta.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    respuesta.headers["Access-Control-Allow-Credentials"] = "true"
+    return respuesta
 
 # 3. Cargar configuración de Base de Datos
 app.config.from_object(Config)
@@ -772,17 +787,253 @@ def index():
     return "<h1>¡PizzaOS con Postgres Funcionando!</h1><p>Creado por Camilo Martinez</p>"
 
 from flask_cors import cross_origin
+
+# --- Helpers JWT para rutas de usuarios ---
+JWT_SECRET_USUARIOS = "pizzeria_secret_key_fixed_2026_super_safe"
+
+def _verificar_token_admin():
+    """Verifica el token JWT y que el rol sea admin. Retorna (payload, None) o (None, respuesta_error)."""
+    import jwt as pyjwt
+    from flask import request, g
+    if flask_request.method == 'OPTIONS':
+        return None, (jsonify({}), 200)
+    encabezado = flask_request.headers.get('Authorization', '')
+    partes = encabezado.split()
+    if len(partes) != 2 or partes[0].lower() != 'bearer':
+        return None, (jsonify({'error': 'Token requerido'}), 401)
+    try:
+        payload = pyjwt.decode(partes[1], JWT_SECRET_USUARIOS, algorithms=['HS256'])
+    except pyjwt.ExpiredSignatureError:
+        return None, (jsonify({'error': 'Token expirado'}), 401)
+    except pyjwt.InvalidTokenError as e:
+        return None, (jsonify({'error': f'Token inválido: {str(e)}'}), 401)
+    if payload.get('rol') != 'admin':
+        return None, (jsonify({'error': 'Acceso restringido a administradores'}), 403)
+    return payload, None
+
 @app.route('/api/usuarios', methods=['GET', 'OPTIONS'])
 @cross_origin(origins="http://localhost:4200", supports_credentials=True)
 def get_usuarios():
-    # Endpoint temporal para evitar CORS/404 mientras se migra el modelo Usuario a Postgres
-    return jsonify({"usuarios": []}), 200
+    payload, err = _verificar_token_admin()
+    if err: return err
+    from models.usuario import Usuario
+    usuarios = Usuario.query.order_by(Usuario.id).all()
+    return jsonify({"usuarios": [u.serializar() for u in usuarios]}), 200
+
+@app.route('/api/usuarios', methods=['POST'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def crear_usuario():
+    payload, err = _verificar_token_admin()
+    if err: return err
+    from models.usuario import Usuario
+    from werkzeug.security import generate_password_hash
+    datos = flask_request.get_json() or {}
+    email = str(datos.get('email', '')).strip().lower()
+    if not email or not datos.get('nombre'):
+        return jsonify({'error': 'Nombre y email son obligatorios'}), 400
+    if Usuario.query.filter_by(email=email).first():
+        return jsonify({'error': 'El email ya está registrado'}), 409
+    contrasena = datos.get('password') or datos.get('contrasena', 'pizzeria123')
+    nuevo = Usuario(
+        nombre=datos.get('nombre'),
+        email=email,
+        contrasena_hash=generate_password_hash(contrasena),
+        rol=datos.get('rol', 'cocinero')
+    )
+    db.session.add(nuevo)
+    db.session.commit()
+    return jsonify(nuevo.serializar()), 201
+
+@app.route('/api/usuarios/<int:id>', methods=['PUT', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def actualizar_usuario(id):
+    if flask_request.method == 'OPTIONS':
+        return jsonify({}), 200
+    payload, err = _verificar_token_admin()
+    if err: return err
+    from models.usuario import Usuario
+    from werkzeug.security import generate_password_hash
+    usuario = Usuario.query.get_or_404(id)
+    datos = flask_request.get_json() or {}
+    if 'nombre' in datos:
+        usuario.nombre = datos['nombre']
+    if 'rol' in datos:
+        usuario.rol = datos['rol']
+    if 'email' in datos:
+        usuario.email = str(datos['email']).strip().lower()
+    if datos.get('password'):
+        usuario.contrasena_hash = generate_password_hash(datos['password'])
+    db.session.commit()
+    return jsonify(usuario.serializar()), 200
+
+@app.route('/api/usuarios/<int:id>', methods=['DELETE', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def eliminar_usuario(id):
+    if flask_request.method == 'OPTIONS':
+        return jsonify({}), 200
+    payload, err = _verificar_token_admin()
+    if err: return err
+    from models.usuario import Usuario
+    usuario = Usuario.query.get_or_404(id)
+    if usuario.email == 'admin@pizzeria.com':
+        return jsonify({'error': 'No se puede eliminar al administrador principal'}), 400
+    db.session.delete(usuario)
+    db.session.commit()
+    return jsonify({'mensaje': 'Usuario eliminado'}), 200
+
+@app.route('/api/admin/rentabilidad', methods=['GET', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def get_rentabilidad():
+    """
+    Devuelve el análisis de rentabilidad por producto:
+    costo de producción, precio de venta, ganancia y margen %.
+    También incluye resumen: producto más rentable, mayor costo y
+    ganancia total estimada de pedidos completados.
+    """
+    if flask_request.method == 'OPTIONS':
+        return jsonify({}), 200
+
+    payload, err = _verificar_token_admin()
+    if err: return err
+
+    from models.producto import Producto
+    from models.pedido import Pedido
+    import json as _json
+
+    productos = Producto.query.all()
+    items_rentabilidad = [p.rentabilidad() for p in productos]
+
+    # Ordenar por margen descendente
+    items_rentabilidad.sort(key=lambda x: x['margen_porcentaje'], reverse=True)
+
+    # Resumen: más rentable y mayor costo
+    mas_rentable = max(items_rentabilidad, key=lambda x: x['margen_porcentaje'], default=None)
+    mayor_costo = max(items_rentabilidad, key=lambda x: x['costo_produccion'], default=None)
+
+    # Ganancia total estimada de pedidos completados
+    ganancia_total = 0.0
+    try:
+        pedidos_completados = Pedido.query.filter(
+            Pedido.estado.ilike('entregado')
+        ).all()
+
+        # Mapa nombre → ganancia por unidad para lookup rápido
+        ganancia_por_nombre = {p['nombre'].lower(): p['ganancia'] for p in items_rentabilidad}
+
+        for pedido in pedidos_completados:
+            if pedido.articulos_json:
+                try:
+                    articulos = _json.loads(pedido.articulos_json)
+                    for art in articulos:
+                        nombre_key = str(art.get('nombre', '')).lower()
+                        cantidad = int(art.get('cantidad', 1))
+                        ganancia_unitaria = ganancia_por_nombre.get(nombre_key, 0.0)
+                        ganancia_total += ganancia_unitaria * cantidad
+                except Exception:
+                    pass
+    except Exception as e:
+        print(f'[RENTABILIDAD] Error calculando ganancia total: {e}')
+
+    return jsonify({
+        "productos": items_rentabilidad,
+        "resumen": {
+            "mas_rentable": mas_rentable,
+            "mayor_costo": mayor_costo,
+            "ganancia_total_estimada": round(ganancia_total, 2),
+            "total_productos": len(items_rentabilidad)
+        }
+    }), 200
+
+@app.route('/api/usuarios/<int:id>/rol', methods=['PATCH', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def cambiar_rol_usuario(id):
+    if flask_request.method == 'OPTIONS':
+        return jsonify({}), 200
+    payload, err = _verificar_token_admin()
+    if err: return err
+    from models.usuario import Usuario
+    usuario = Usuario.query.get_or_404(id)
+    datos = flask_request.get_json() or {}
+    nuevo_rol = datos.get('rol', '').strip().lower()
+    roles_validos = ['admin', 'cocinero', 'domiciliario', 'cliente', 'mesero']
+    if nuevo_rol not in roles_validos:
+        return jsonify({'error': f'Rol inválido. Opciones: {", ".join(roles_validos)}'}), 400
+    if usuario.email == 'admin@pizzeria.com' and nuevo_rol != 'admin':
+        return jsonify({'error': 'No se puede cambiar el rol del administrador principal'}), 400
+    rol_anterior = usuario.rol
+    usuario.rol = nuevo_rol
+    db.session.commit()
+    print(f'[ROL] {usuario.email}: {rol_anterior} → {nuevo_rol} (por {payload.get("email")})')
+    return jsonify({
+        'mensaje': f'Rol de {usuario.nombre} actualizado a {nuevo_rol}',
+        'usuario': usuario.serializar()
+    }), 200
+
+@app.route('/api/usuarios/<int:id>/reset-password', methods=['POST', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def reset_password_usuario(id):
+    if flask_request.method == 'OPTIONS':
+        return jsonify({}), 200
+    payload, err = _verificar_token_admin()
+    if err: return err
+    from models.usuario import Usuario
+    from werkzeug.security import generate_password_hash
+    usuario = Usuario.query.get_or_404(id)
+    datos = flask_request.get_json() or {}
+    nueva_contrasena = datos.get('nueva_contrasena', '').strip()
+    if len(nueva_contrasena) < 6:
+        return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+    usuario.contrasena_hash = generate_password_hash(nueva_contrasena)
+    db.session.commit()
+    print(f'[RESET-PWD] Contraseña reseteada para usuario {usuario.email} por admin {payload.get("email")}')
+    return jsonify({'mensaje': f'Contraseña de {usuario.nombre} actualizada correctamente'}), 200
 
 # 6. Ejecución del Servidor
 if __name__ == '__main__':
     with app.app_context():
         # Importamos modelos para que SQLAlchemy cree las tablas en Postgres
-        import models 
+        import models
+        from models.usuario import Usuario
         db.create_all()
-       
+
+        # Migración: agregar precio_unidad a la tabla insumo si no existe
+        try:
+            from sqlalchemy import text
+            with db.engine.connect() as conn:
+                result = conn.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name='insumo' AND column_name='precio_unidad'"
+                ))
+                if not result.fetchone():
+                    conn.execute(text(
+                        "ALTER TABLE insumo ADD COLUMN precio_unidad NUMERIC(10,2)"
+                    ))
+                    # Inicializar con el valor de precio existente
+                    conn.execute(text(
+                        "UPDATE insumo SET precio_unidad = precio WHERE precio_unidad IS NULL"
+                    ))
+                    conn.commit()
+                    print('[MIGRACIÓN] Columna precio_unidad agregada a tabla insumo')
+        except Exception as e:
+            print(f'[MIGRACIÓN] precio_unidad ya existe o error: {e}')
+
+        # Crear admin por defecto si no existe
+        from werkzeug.security import generate_password_hash
+        admin = Usuario.query.filter_by(email='admin@pizzeria.com').first()
+        if not admin:
+            admin = Usuario(
+                nombre='Administrador',
+                email='admin@pizzeria.com',
+                contrasena_hash=generate_password_hash('admin123'),
+                rol='admin'
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print('[INFO] Usuario admin creado: admin@pizzeria.com / admin123')
+        else:
+            if admin.rol != 'admin':
+                admin.rol = 'admin'
+                db.session.commit()
+                print('[INFO] Rol de admin corregido')
+
     app.run(debug=True, port=5000)

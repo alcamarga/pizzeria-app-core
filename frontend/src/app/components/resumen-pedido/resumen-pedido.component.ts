@@ -19,6 +19,8 @@ export class ResumenPedidoComponent {
   // Acceso directo a los items reactivos
   items = this.cartService.items;
   total = this.cartService.totalCarrito;
+  iva = this.cartService.ivaCarrito;
+  totalConIva = this.cartService.totalConIva;
   totalItems = this.cartService.totalArticulos;
 
   aumentar(idx: number) {

@@ -1,54 +1,48 @@
-import { Injectable } from '@angular/core';
+// Servicio para gestión de insumos del inventario.
+// Autor: Camilo Martinez | Fecha: 01/05/2026 | Versión: 2.0
+
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
-/**
- * Interface sincronizada con el Backend (Flask/PostgreSQL)
- * Nota: Se cambió 'cantidad_actual' por 'cantidad' para coincidir con el JSON del servidor.
- */
 export interface Insumo {
   id: number;
   nombre: string;
-  cantidad: number; // Coincide con el JSON que vimos en el navegador
-  precio: number;   // Agregado para mostrar el precio en el inventario
-  unidad_medida?: string; // Opcional por ahora si no viene en el JSON de pizzas
-  stock_minimo?: number;  // Opcional
+  cantidad: number;
+  precio_unidad: number;   // precio de compra por unidad de medida
+  unidad_medida?: string;
+  stock_minimo?: number;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+/** Payload para crear o editar un insumo */
+export interface InsumoPayload {
+  nombre: string;
+  cantidad: number;
+  precio_unidad: number;
+  unidad_medida: string;
+  stock_minimo: number;
+}
+
+@Injectable({ providedIn: 'root' })
 export class InsumosService {
-  private apiUrl = 'http://127.0.0.1:5000/api/insumos';
+  private http = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/insumos`;
 
-  constructor(private http: HttpClient) { }
-
-  /**
-   * Obtener todos los productos (pizzas/insumos)
-   */
   getInsumos(): Observable<Insumo[]> {
     return this.http.get<Insumo[]>(this.apiUrl);
   }
 
-  /**
-   * Actualizar el stock
-   */
-  updateInsumo(id: number, cantidad: number): Observable<Insumo> {
-    // Se envía 'cantidad' en el body para mantener consistencia con el backend
-    return this.http.put<Insumo>(`${this.apiUrl}/${id}`, { cantidad: cantidad });
-  }
-
-  /**
-   * Crear un nuevo registro
-   */
-  createInsumo(insumo: any): Observable<Insumo> {
+  createInsumo(insumo: InsumoPayload): Observable<Insumo> {
     return this.http.post<Insumo>(this.apiUrl, insumo);
   }
 
-  /**
-   * Eliminar registro permanentemente
-   */
-  deleteInsumo(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+  /** Actualiza cantidad, precio_unidad, stock_minimo, nombre o unidad_medida */
+  updateInsumo(id: number, cambios: Partial<InsumoPayload>): Observable<Insumo> {
+    return this.http.put<Insumo>(`${this.apiUrl}/${id}`, cambios);
+  }
+
+  deleteInsumo(id: number): Observable<{ status: string; mensaje: string }> {
+    return this.http.delete<{ status: string; mensaje: string }>(`${this.apiUrl}/${id}`);
   }
 }

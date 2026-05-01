@@ -1,5 +1,5 @@
 // Interfaces para la gestión de pedidos.
-// Autor: Camilo Martinez | Fecha: 23/03/2026 | Versión: 4.1
+// Autor: Camilo Martinez | Fecha: 23/03/2026 | Versión: 4.2
 
 export interface ArticuloPedido {
   nombre: string;

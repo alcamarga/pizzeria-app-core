@@ -42,12 +42,16 @@
 
       <div class="totals-section mt-4 pt-3 border-top border-secondary border-opacity-50">
         <div class="d-flex justify-content-between text-white mb-2">
-          <span>Subtotal ({{ totalItems() }} items)</span>
-          <span>${{ total() | number }}</span>
+          <span class="text-white-50">Subtotal ({{ totalItems() }} items)</span>
+          <span>${{ total() | number:'1.0-0' }}</span>
         </div>
-        <div class="d-flex justify-content-between text-warning fw-bold fs-4">
-          <span>TOTAL</span>
-          <span>${{ total() | number }}</span>
+        <div class="d-flex justify-content-between text-white-50 mb-2 small">
+          <span>IVA (19%)</span>
+          <span>${{ iva() | number:'1.0-0' }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary border-opacity-25">
+          <span class="text-warning fw-bold fs-5">TOTAL</span>
+          <span class="text-warning fw-bold fs-4">${{ totalConIva() | number:'1.0-0' }}</span>
         </div>
       </div>
 

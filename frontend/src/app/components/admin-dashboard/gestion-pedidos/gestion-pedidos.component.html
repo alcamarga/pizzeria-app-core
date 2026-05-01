@@ -1,6 +1,6 @@
 <div class="gestion-container">
   <div class="header">
-    <h2>Gestión de Pedidos</h2>
+    <h2>📋 Gestión de Pedidos</h2>
     <p>Control de flujo y estados de venta</p>
   </div>
 
@@ -14,38 +14,116 @@
         <tr>
           <th>ID</th>
           <th>Fecha</th>
-          <th>Cliente ID</th>
-          <th>Total</th>
-          <th>Artículos</th>
+          <th>Cliente</th>
+          <th class="text-end">Subtotal</th>
+          <th class="text-end">IVA</th>
+          <th class="text-end">Total</th>
           <th>Estado</th>
+          <th class="text-center">Detalle</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let p of pedidos">
-          <td>#{{ p.id }}</td>
-          <td>{{ p.fecha }}</td>
-          <td>User #{{ p.cliente }}</td>
-          <td class="price">{{ p.total | currency:'USD':'symbol':'1.0-0' }}</td>
+          <td class="fw-bold text-warning">#{{ p.id }}</td>
+          <td class="text-white-50 small">{{ p.fecha_hora || p.fecha || '—' }}</td>
+          <td>{{ p.cliente || ('User #' + p.usuario_id) }}</td>
+          <td class="text-end text-white-50">${{ subtotalPedido(p) | number:'1.0-0' }}</td>
+          <td class="text-end text-white-50 small">${{ ivaPedido(p) | number:'1.0-0' }}</td>
+          <td class="text-end price fw-bold">${{ p.total | number:'1.0-0' }}</td>
           <td>
-            <div class="articulos-cell">
-              <span>{{ p.pizzas }}</span>
-            </div>
-          </td>
-          <td>
-            <select 
-              [(ngModel)]="p.estado" 
+            <select
+              [(ngModel)]="p.estado"
               (change)="cambiarEstado(p.id, p.estado || 'Pendiente')"
               [class]="'status-select ' + (p.estado ? p.estado.toLowerCase() : 'pendiente')">
               <option *ngFor="let st of estadosDisponibles" [value]="st">{{ st }}</option>
             </select>
           </td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline-info" (click)="verDetalle(p)" title="Ver productos del pedido">
+              🔍 Ver
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="pedidos.length === 0">
+          <td colspan="8" class="text-center text-muted py-4">No hay pedidos registrados.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Toast Notification -->
+  <!-- Toast -->
   <div class="toast-notification" [class.show]="mostrarToast()">
     {{ mensajeToast() }}
+  </div>
+</div>
+
+<!-- ===== MODAL: Detalle del Pedido ===== -->
+<div class="modal-overlay" *ngIf="mostrarDetalle" (click)="cerrarDetalle()">
+  <div class="modal-detalle" (click)="$event.stopPropagation()">
+
+    <div class="modal-detalle-header">
+      <h3>🧾 Detalle — Orden #{{ pedidoDetalle?.id }}</h3>
+      <button class="btn-cerrar" (click)="cerrarDetalle()">✕</button>
+    </div>
+
+    <div class="modal-detalle-body" *ngIf="pedidoDetalle">
+
+      <!-- Info general -->
+      <div class="detalle-meta">
+        <span>📅 {{ pedidoDetalle.fecha_hora || pedidoDetalle.fecha || '—' }}</span>
+        <span>👤 {{ pedidoDetalle.cliente || ('User #' + pedidoDetalle.usuario_id) }}</span>
+        <span class="badge-estado">{{ pedidoDetalle.estado || 'Pendiente' }}</span>
+      </div>
+
+      <!-- Artículos -->
+      <table class="detalle-table" *ngIf="pedidoDetalle.articulos && pedidoDetalle.articulos.length > 0">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="text-center">Tamaño</th>
+            <th class="text-center">Cant.</th>
+            <th class="text-end">P. Unit.</th>
+            <th class="text-end">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let art of pedidoDetalle.articulos">
+            <td class="fw-bold">{{ art.nombre }}</td>
+            <td class="text-center text-white-50">{{ art.tamano }}</td>
+            <td class="text-center">{{ art.cantidad }}</td>
+            <td class="text-end text-white-50">${{ art.precio | number:'1.0-0' }}</td>
+            <td class="text-end text-warning fw-bold">${{ (art.precio * art.cantidad) | number:'1.0-0' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Fallback si no hay artículos -->
+      <div *ngIf="!pedidoDetalle.articulos || pedidoDetalle.articulos.length === 0"
+           class="text-center text-muted py-3">
+        <span *ngIf="pedidoDetalle.pizzas">{{ pedidoDetalle.pizzas }}</span>
+        <span *ngIf="!pedidoDetalle.pizzas">Sin detalle de productos disponible.</span>
+      </div>
+
+      <!-- Totales -->
+      <div class="detalle-totales">
+        <div class="detalle-fila">
+          <span>Subtotal</span>
+          <span>${{ subtotalPedido(pedidoDetalle) | number:'1.0-0' }}</span>
+        </div>
+        <div class="detalle-fila text-muted small">
+          <span>IVA (19%)</span>
+          <span>${{ ivaPedido(pedidoDetalle) | number:'1.0-0' }}</span>
+        </div>
+        <div class="detalle-fila total-final">
+          <span>TOTAL</span>
+          <span>${{ pedidoDetalle.total | number:'1.0-0' }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-detalle-footer">
+      <button class="btn btn-outline-light" (click)="cerrarDetalle()">Cerrar</button>
+    </div>
   </div>
 </div>

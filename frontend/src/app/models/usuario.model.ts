@@ -1,7 +1,7 @@
 // Interfaces para el modelo Usuario y autenticación JWT.
 // Autor: Camilo Martinez | Fecha: 23/03/2026 | Versión: 4.1
 
-export type RolUsuario = 'cliente' | 'admin' | 'cocinero' | 'domiciliario';
+export type RolUsuario = 'cliente' | 'admin' | 'cocinero' | 'domiciliario' | 'mesero';
 
 export interface Usuario {
   id: number;

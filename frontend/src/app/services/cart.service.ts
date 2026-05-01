@@ -31,9 +31,19 @@ export class CartService {
     this._items().reduce((acc, a) => acc + a.cantidad, 0)
   );
 
-  // Precio total del carrito
+  // Precio total del carrito (sin IVA = subtotal base)
   public readonly totalCarrito = computed(() =>
     this._items().reduce((acc, a) => acc + a.precioUnitario * a.cantidad, 0)
+  );
+
+  // IVA (19% sobre el subtotal)
+  public readonly ivaCarrito = computed(() =>
+    Math.round(this.totalCarrito() * 0.19)
+  );
+
+  // Total final con IVA incluido
+  public readonly totalConIva = computed(() =>
+    this.totalCarrito() + this.ivaCarrito()
   );
 
   constructor() {

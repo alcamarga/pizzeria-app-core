@@ -78,17 +78,40 @@ def api_pedidos():
 
     try:
         todos_los_pedidos = Pedido.query.order_by(Pedido.fecha.desc()).all()
-        pedidos_json = [
-            {
-                "id": p.id, 
-                "cliente": p.cliente, 
-                "pizzas": p.pizzas, 
+        pedidos_json = []
+        for p in todos_los_pedidos:
+            # Parsear articulos_json para devolver los items con detalle
+            articulos = []
+            if p.articulos_json:
+                try:
+                    import json as _json
+                    raw = _json.loads(p.articulos_json)
+                    articulos = [
+                        {
+                            "nombre": a.get("nombre", ""),
+                            "tamano": a.get("tamano", ""),
+                            "cantidad": a.get("cantidad", 1),
+                            "precio": float(a.get("precio", 0))
+                        }
+                        for a in raw
+                    ]
+                except Exception:
+                    articulos = []
+
+            pedidos_json.append({
+                "id": p.id,
+                "cliente": p.cliente,
+                "pizzas": p.pizzas,
                 "direccion": p.direccion,
                 "total": float(p.total) if p.total else 0.0,
+                "subtotal": float(p.total) / 1.19 if p.total else 0.0,
+                "iva": float(p.total) - float(p.total) / 1.19 if p.total else 0.0,
                 "estado": p.estado or "Pendiente",
-                "fecha": p.fecha.strftime("%Y-%m-%d %H:%M:%S") if p.fecha else ""
-            } for p in todos_los_pedidos
-        ]
+                "fecha_hora": p.fecha.strftime("%Y-%m-%d %H:%M:%S") if p.fecha else "",
+                "fecha": p.fecha.strftime("%Y-%m-%d %H:%M:%S") if p.fecha else "",
+                "articulos": articulos
+            })
+
         return jsonify({
             "pedidos": pedidos_json,
             "total_pedidos": len(pedidos_json)
@@ -143,31 +166,109 @@ def api_actualizar_estado_pedido(id):
 
 @pedidos_blueprint.route('/auth/login', methods=['POST'])
 def login():
-    # Usamos force=True por si Angular no envía el header exacto
-    data = request.get_json(force=True) 
-    email = data.get('email', '').strip() # .strip() quita espacios invisibles
+    data = request.get_json(force=True)
+    email = data.get('email', '').strip().lower()
     contrasena = data.get('contrasena', '').strip()
 
-    # Imprime en la terminal para que veas qué llega
-    print(f"DEBUG: Intentando login con email: '{email}' y contrasena: '{contrasena}'")
+    print(f"DEBUG: Intentando login con email: '{email}'")
 
-    if email == 'admin@pizzeria.com' and contrasena == 'admin123':
-        # Generar un JWT real en lugar de string quemado
-        carga_util = {
-            "sub": "1", 
-            "nombre": "Admin PizzaOS", 
-            "email": email, 
-            "rol": "admin", 
-            "exp": datetime.now(timezone.utc) + timedelta(hours=168)
+    # Buscar usuario en PostgreSQL
+    from models.usuario import Usuario
+    from werkzeug.security import check_password_hash
+
+    usuario = Usuario.query.filter_by(email=email).first()
+
+    if not usuario:
+        print(f"DEBUG: Usuario no encontrado: '{email}'")
+        return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+
+    if not check_password_hash(usuario.contrasena_hash, contrasena):
+        print(f"DEBUG: Contraseña incorrecta para: '{email}'")
+        return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+
+    carga_util = {
+        "sub": str(usuario.id),
+        "nombre": usuario.nombre,
+        "email": usuario.email,
+        "rol": usuario.rol,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=168)
+    }
+    token_real = pyjwt.encode(carga_util, "pizzeria_secret_key_fixed_2026_super_safe", algorithm="HS256")
+
+    print(f"DEBUG: Login exitoso para '{email}' con rol '{usuario.rol}'")
+    return jsonify({
+        "access_token": token_real,
+        "rol": usuario.rol,
+        "email": usuario.email,
+        "usuario": {
+            "id": usuario.id,
+            "nombre": usuario.nombre,
+            "email": usuario.email,
+            "rol": usuario.rol
         }
-        token_real = pyjwt.encode(carga_util, "pizzeria_secret_key_fixed_2026_super_safe", algorithm="HS256")
+    }), 200
 
-        return jsonify({
-            "access_token": token_real,
-            "usuario": {"id": 1, "nombre": "Admin PizzaOS", "email": email, "rol": "admin"}
-        }), 200
-    
-    return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
+@pedidos_blueprint.route('/auth/registro', methods=['POST', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True, methods=['POST', 'OPTIONS'])
+def registro():
+    """Registro de nuevos usuarios con rol 'cliente' por defecto."""
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+
+    from models.usuario import Usuario
+    from werkzeug.security import generate_password_hash
+
+    datos = request.get_json(force=True) or {}
+    nombre = str(datos.get('nombre', '')).strip()
+    email = str(datos.get('email', '')).strip().lower()
+    contrasena = str(datos.get('contrasena', '')).strip()
+
+    print(f"[REGISTRO] Intento de registro: nombre='{nombre}', email='{email}'")
+
+    # Validaciones básicas
+    if not nombre or not email or not contrasena:
+        return jsonify({"error": "Nombre, email y contraseña son obligatorios"}), 400
+    if len(contrasena) < 6:
+        return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
+
+    # Verificar email duplicado
+    if Usuario.query.filter_by(email=email).first():
+        print(f"[REGISTRO] Email ya registrado: '{email}'")
+        return jsonify({"error": "El email ya está registrado"}), 409
+
+    # Crear usuario con rol 'cliente' por defecto
+    nuevo = Usuario(
+        nombre=nombre,
+        email=email,
+        contrasena_hash=generate_password_hash(contrasena),
+        rol='cliente'
+    )
+    db.session.add(nuevo)
+    db.session.commit()
+    print(f"[REGISTRO] Usuario creado: id={nuevo.id}, email='{nuevo.email}', rol='{nuevo.rol}'")
+
+    # Generar token JWT para inicio de sesión automático
+    carga_util = {
+        "sub": str(nuevo.id),
+        "nombre": nuevo.nombre,
+        "email": nuevo.email,
+        "rol": nuevo.rol,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=168)
+    }
+    token = pyjwt.encode(carga_util, "pizzeria_secret_key_fixed_2026_super_safe", algorithm="HS256")
+
+    return jsonify({
+        "access_token": token,
+        "rol": nuevo.rol,
+        "email": nuevo.email,
+        "usuario": {
+            "id": nuevo.id,
+            "nombre": nuevo.nombre,
+            "email": nuevo.email,
+            "rol": nuevo.rol,
+            "fecha_registro": nuevo.fecha_registro
+        }
+    }), 201
 
 from flask_cors import cross_origin
 
@@ -218,54 +319,145 @@ def api_pizzas():
         productos = Producto.query.all()
         pizzas_json = [
             {
-                "id": p.id, 
-                "nombre": p.nombre, 
+                "id": p.id,
+                "nombre": p.nombre,
                 "descripcion": p.descripcion,
-                "precio": float(p.precio_1), 
                 "precio_1": float(p.precio_1) if p.precio_1 is not None else None,
                 "precio_2": float(p.precio_2) if p.precio_2 is not None else None,
                 "precio_3": float(p.precio_3) if p.precio_3 is not None else None,
-                "categoria": p.categoria.nombre if p.categoria else "Pizza",
-                "cantidad": 50 # Dummy temporal
+                "categoria": p.categoria.nombre if p.categoria else "Pizza"
             } for p in productos
         ]
         return jsonify(pizzas_json)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@pedidos_blueprint.route('/insumos', methods=['GET', 'POST'])
+@pedidos_blueprint.route('/insumos', methods=['GET', 'POST', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
 def api_insumos():
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+
     if request.method == 'POST':
-        data = request.get_json()
+        data = request.get_json() or {}
+        precio_val = float(data.get('precio_unidad', data.get('precio', 0)) or 0)
         nuevo = Insumo(
             nombre=data.get('nombre'),
-            cantidad=data.get('cantidad', 0),
+            cantidad=int(data.get('cantidad', 0)),
             unidad_medida=data.get('unidad_medida', 'gr'),
-            precio=0 # Default for now
+            stock_minimo=float(data.get('stock_minimo', 0) or 0),
+            precio=precio_val,
+            precio_unidad=precio_val
         )
         db.session.add(nuevo)
         db.session.commit()
-        return jsonify({
-            "id": nuevo.id, "nombre": nuevo.nombre, "cantidad": nuevo.cantidad,
-            "unidad_medida": nuevo.unidad_medida, "stock_minimo": 0
-        }), 201
-        
+        return jsonify(nuevo.to_dict()), 201
+
     try:
-        insumos = Insumo.query.all()
-        insumos_json = [
-            {
-                "id": i.id, 
-                "nombre": i.nombre, 
-                "cantidad": i.cantidad,
-                "unidad_medida": getattr(i, 'unidad_medida', 'gr'),
-                "stock_minimo": getattr(i, 'stock_minimo', 0)
-            } for i in insumos
-        ]
-        return jsonify(insumos_json)
+        insumos = Insumo.query.order_by(Insumo.nombre).all()
+        return jsonify([i.to_dict() for i in insumos])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@pedidos_blueprint.route('/insumos/<int:id>', methods=['PUT', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def api_actualizar_insumo(id):
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+    insumo = Insumo.query.get_or_404(id)
+    data = request.get_json() or {}
+    if 'cantidad' in data:
+        insumo.cantidad = int(data['cantidad'])
+    if 'precio_unidad' in data:
+        precio = float(data['precio_unidad'] or 0)
+        insumo.precio_unidad = precio
+        insumo.precio = precio          # mantener retrocompat.
+    if 'stock_minimo' in data:
+        insumo.stock_minimo = float(data['stock_minimo'] or 0)
+    if 'nombre' in data:
+        insumo.nombre = data['nombre']
+    if 'unidad_medida' in data:
+        insumo.unidad_medida = data['unidad_medida']
+    db.session.commit()
+    return jsonify(insumo.to_dict()), 200
+
+@pedidos_blueprint.route('/insumos/<int:id>', methods=['DELETE', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True)
+def api_eliminar_insumo(id):
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+    insumo = Insumo.query.get_or_404(id)
+    db.session.delete(insumo)
+    db.session.commit()
+    return jsonify({"status": "ok", "mensaje": "Insumo eliminado"}), 200
+
 from flask_cors import cross_origin
+
+@pedidos_blueprint.route('/pizzas/<int:id>', methods=['PUT', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True, methods=['PUT', 'OPTIONS'])
+def api_actualizar_pizza(id):
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+
+    from models.producto import Producto
+    try:
+        producto = Producto.query.get(id)
+        if not producto:
+            return jsonify({"error": "Producto no encontrado"}), 404
+
+        data = request.get_json() or {}
+        if 'nombre' in data:
+            producto.nombre = data['nombre']
+        if 'descripcion' in data:
+            producto.descripcion = data['descripcion']
+        if 'precio_1' in data:
+            producto.precio_1 = float(data['precio_1']) if data['precio_1'] is not None else None
+        if 'precio_2' in data:
+            producto.precio_2 = float(data['precio_2']) if data['precio_2'] is not None else None
+        if 'precio_3' in data:
+            producto.precio_3 = float(data['precio_3']) if data['precio_3'] is not None else None
+        if 'categoria' in data:
+            from models.producto import Categoria
+            cat = Categoria.query.filter_by(nombre=data['categoria']).first()
+            if not cat:
+                cat = Categoria(nombre=data['categoria'])
+                db.session.add(cat)
+                db.session.flush()
+            producto.categoria_id = cat.id
+
+        db.session.commit()
+        return jsonify({
+            "status": "ok",
+            "id": producto.id,
+            "nombre": producto.nombre,
+            "descripcion": producto.descripcion,
+            "precio_1": float(producto.precio_1) if producto.precio_1 is not None else None,
+            "precio_2": float(producto.precio_2) if producto.precio_2 is not None else None,
+            "precio_3": float(producto.precio_3) if producto.precio_3 is not None else None,
+            "categoria": producto.categoria.nombre if producto.categoria else None
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@pedidos_blueprint.route('/pizzas/<int:id>', methods=['DELETE', 'OPTIONS'])
+@cross_origin(origins="http://localhost:4200", supports_credentials=True, methods=['DELETE', 'OPTIONS'])
+def api_eliminar_pizza(id):
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+
+    from models.producto import Producto
+    try:
+        producto = Producto.query.get(id)
+        if not producto:
+            return jsonify({"error": "Producto no encontrado"}), 404
+        db.session.delete(producto)
+        db.session.commit()
+        return jsonify({"status": "ok", "mensaje": "Producto eliminado"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 @pedidos_blueprint.route('/pizzas/<int:id>/receta', methods=['GET', 'POST', 'OPTIONS'])
 @cross_origin(supports_credentials=True)
 def api_receta(id):
