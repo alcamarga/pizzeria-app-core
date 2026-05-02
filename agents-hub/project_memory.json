@@ -54,7 +54,18 @@ const projectMemory = [
       "Registro exitoso de nuevos productos (Coca-Cola) con creación automática de categorías."
     ],
     "estado": "FINALIZADO",
-    "notas_proxima_sesion": "Mañana 1 de mayo: Revisión técnica de Login y permisos de usuario."
+    "notas_proxima_sesion": "Mañana 1 de mayo: Revisión técnica de Login y permisos de usuario.",
+  }
+  },
+  {
+    "fecha": "2026-05-01",
+    "modulo": "Fullstack (Angular + Flask + Postgres)",
+    "tarea": "Actualización de precios y análisis de rentabilidad",
+    "descripcion": "Se cargaron precios reales de insumos en el inventario. Se identificó que el Análisis de Rentabilidad solo toma el 'Precio 1' (pizza pequeña), dejando a la Pizza Marinara en un margen crítico del 27.3%.",
+    "pending_tasks": [
+      "Implementar desglose de rentabilidad por tamaños de pizza"
+    ],
+    "estado": "PENDIENTE"
   }
 ];
 

@@ -41,3 +41,4 @@ El sistema ahora incluye un motor de descuentos automáticos vinculado al estado
 - **Lógica de Recetas:** Cada producto está vinculado a una receta técnica (ej. gramos de queso, ml de salsa).
 - **Sistema Anti-Errores:** El backend valida la integridad de los datos mediante ID y fallback por nombre, asegurando que el stock siempre sea preciso.
 - **Control de Ruptura de Stock:** Validación automática que impide la entrega si no hay existencias suficientes.
+- **Actualización de precios y análisis de rentabilidad:** Se cargaron precios reales de insumos; el Análisis de Rentabilidad solo considera 'Precio 1' (pizza pequeña), dejando a la Pizza Marinara con margen crítico del 27.3%. Pendiente: desglose por tamaños de pizza.
